@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBS Operations Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-12 border-b border-gray-700 pb-6">
+            <h1 class="text-4xl font-bold text-blue-400">DBS Tool Portal</h1>
+            <p class="text-gray-400 mt-2">Active Production Apps & Calculators</p>
+        </header>
+
+        <div class="mb-8">
+            <input type="text" id="search" placeholder="Search apps..." 
+                class="w-full max-w-md px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div id="app-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <p class="text-gray-500">Scanning GitHub for apps...</p>
+        </div>
+    </div>
+
+    <script>
+        async function loadApps() {
+            const username = 'drawerboxspecialties-ops'; 
+            const grid = document.getElementById('app-grid');
+            
+            try {
+                const response = await fetch(`https://api.github.com/users/${username}/repos?sort=updated`);
+                const repos = await response.json();
+
+                // Logic: Only show repos that have GitHub Pages enabled 
+                // and are NOT this dashboard itself.
+                const apps = repos.filter(repo => repo.has_pages && repo.name !== 'ops-dashboard');
+
+                if (apps.length === 0) {
+                    grid.innerHTML = '<p class="text-gray-400 text-xl">No active apps found with GitHub Pages enabled.</p>';
+                    return;
+                }
+
+                grid.innerHTML = apps.map(app => `
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-blue-500 transition-all shadow-lg group">
+                        <h2 class="text-xl font-semibold mb-2 capitalize">${app.name.replace(/-/g, ' ')}</h2>
+                        <p class="text-gray-400 text-sm mb-6 h-10 overflow-hidden">
+                            ${app.description || 'Production Tool for DBS Operations'}
+                        </p>
+                        <a href="https://${username}.github.io/${app.name}/" 
+                           target="_blank" 
+                           class="inline-block w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg transition-colors">
+                           Launch Application
+                        </a>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                grid.innerHTML = '<p class="text-red-400 text-xl">Error loading apps. Check your connection.</p>';
+            }
+        }
+
+        // Simple search filter
+        document.getElementById('search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('#app-grid > div');
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                card.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        });
+
+        loadApps();
+    </script>
+</body>
+</html>
