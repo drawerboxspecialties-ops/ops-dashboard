@@ -11,8 +11,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background: #0f172a; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
 <body class="text-slate-200 min-h-screen flex items-center justify-center p-6">
@@ -23,7 +21,7 @@
                 <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                     DBS Batch Processor
                 </h1>
-                <p class="text-slate-400 font-light tracking-wide uppercase text-xs">Rounding & Rips Optimization</p>
+                <p class="text-slate-400 font-light tracking-wide uppercase text-xs">V2.1 • Quote-Stripping Enabled</p>
             </div>
             <button id="clearAllBtn" class="text-xs bg-slate-700/50 hover:bg-red-900/40 text-slate-400 hover:text-red-400 px-4 py-2 rounded-lg transition-all border border-white/5">
                 Clear All
@@ -34,7 +32,7 @@
             <input type="file" id="csvFiles" accept=".csv" multiple class="absolute inset-0 opacity-0 cursor-pointer">
             <div class="text-slate-400">
                 <p class="text-lg font-medium text-slate-300">Drop Allmoxy Reports Here</p>
-                <p class="text-sm">Rips and Linear Ft will be rounded up automatically</p>
+                <p class="text-sm">Rounding & Rip logic applied automatically</p>
             </div>
         </div>
 
@@ -94,13 +92,15 @@
         processBtn.addEventListener('click', async () => {
             const zip = new JSZip();
             const categories = { "FAA": {}, "Ply": {}, "PB": {}, "MDF": {}, "Solid": {} };
+            let totalRowsProcessed = 0;
 
             for (const file of selectedFiles) {
                 const data = await new Promise(resolve => {
                     Papa.parse(file, {
                         header: true,
                         skipEmptyLines: true,
-                        transformHeader: h => h.replace(/[^\x20-\x7E]/g, '').trim(),
+                        // STRIPS QUOTES AND HIDDEN CHARACTERS FROM HEADERS
+                        transformHeader: h => h.replace(/[^\x20-\x7E]/g, '').replace(/['"]+/g, '').trim(),
                         complete: r => resolve(r.data)
                     });
                 });
@@ -124,6 +124,8 @@
 
                     if (!rawMaterial || isNaN(height)) return;
 
+                    totalRowsProcessed++;
+
                     const roundedHeight = Math.ceil(height * 2) / 2;
                     const matLower = rawMaterial.toLowerCase();
                     let cat = "Solid", ripLength = 0;
@@ -144,6 +146,11 @@
                 });
             }
 
+            if (totalRowsProcessed === 0) {
+                alert("Error: No data found. Please ensure your CSV has columns named 'MATERIAL' and 'HEIGHT'.");
+                return;
+            }
+
             for (const [name, groups] of Object.entries(categories)) {
                 const items = Object.values(groups);
                 if (items.length > 0) {
@@ -152,14 +159,14 @@
                         const output = { 
                             "Material": i.Material, 
                             "Production Height": i.Height, 
-                            "Total Linear Ft": Math.ceil(i["Total LF"]) // Always round up LF
+                            "Total Linear Ft": Math.ceil(i["Total LF"])
                         };
                         
                         if (name === "Ply" || name === "PB" || name === "MDF") {
-                            output["Total Rips"] = Math.ceil(i["Total Rips"]); // Round up Rips for sheet goods
+                            output["Total Rips"] = Math.ceil(i["Total Rips"]);
                             output["Rip Size"] = i.Rip;
                         } else {
-                            output["Total Pieces"] = i.Pieces; // Solids/FAA use standard parts count
+                            output["Total Pieces"] = i.Pieces;
                         }
                         return output;
                     });
@@ -172,7 +179,8 @@
             a.href = URL.createObjectURL(blob);
             a.download = `DBS_Batch_${new Date().toISOString().split('T')[0]}.zip`;
             a.click();
-        });
-    </script>
+        }
+    });
+</script>
 </body>
 </html>
