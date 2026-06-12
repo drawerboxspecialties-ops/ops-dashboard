@@ -14,7 +14,7 @@
                     },
                     animation: {
                         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'spin-slow': 'spin 12s linear infinite',
+                        'spin-slow': 'spin 8s linear infinite',
                     }
                 }
             }
@@ -24,24 +24,26 @@
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
         
         body {
-            background-color: #030712;
+            background-color: #f8fafc;
             overflow-x: hidden;
         }
 
-        /* Glassmorphism utility */
+        /* Glassmorphism utility - Light Theme */
         .glass-panel {
-            background: rgba(17, 24, 39, 0.45);
+            background: rgba(255, 255, 255, 0.65);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
         }
 
         .glass-card {
-            background: rgba(17, 24, 39, 0.6);
+            background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba(15, 23, 42, 0.05);
+            box-shadow: 0 10px 25px -10px rgba(15, 23, 42, 0.05);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
             user-select: none;
             -webkit-user-select: none;
@@ -53,33 +55,33 @@
             inset: 0;
             border-radius: inherit;
             padding: 1.5px;
-            background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0), rgba(236, 72, 153, 0.05));
+            background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0), rgba(236, 72, 153, 0.03));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.25s ease;
         }
 
         .glass-card:hover {
-            transform: translateY(-6px);
-            background: rgba(17, 24, 39, 0.85);
-            box-shadow: 0 20px 40px -15px rgba(59, 130, 246, 0.15),
-                        0 0 0 1px rgba(59, 130, 246, 0.3);
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 20px 35px -12px rgba(59, 130, 246, 0.12),
+                        0 0 0 1px rgba(59, 130, 246, 0.25);
         }
 
         .glass-card:hover::before {
-            background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.5), rgba(99, 102, 241, 0.3), rgba(236, 72, 153, 0.2));
+            background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.3), rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.1));
         }
 
-        /* Tapped / Depressed Active State */
+        /* Tapped / Depressed Active State (Quick Response) */
         .glass-card:active {
-            transform: scale(0.97) translateY(0) !important;
-            box-shadow: 0 4px 12px -5px rgba(59, 130, 246, 0.3) !important;
-            transition: all 0.08s ease !important;
+            transform: scale(0.98) translateY(0) !important;
+            box-shadow: 0 4px 10px -5px rgba(59, 130, 246, 0.2) !important;
+            transition: all 0.06s ease !important;
         }
 
-        /* Ripple Effect Container & Wave */
+        /* Ripple Effect Container & Wave (Quick Fade) */
         .ripple-container {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -92,15 +94,15 @@
         .ripple-wave {
             position: absolute;
             border-radius: 50%;
-            background: rgba(59, 130, 246, 0.25);
+            background: rgba(59, 130, 246, 0.15);
             transform: scale(0);
-            animation: ripple-animation 0.6s cubic-bezier(0.1, 0.8, 0.3, 1);
+            animation: ripple-animation 0.45s cubic-bezier(0.1, 0.8, 0.3, 1);
             pointer-events: none;
         }
 
         @keyframes ripple-animation {
             to {
-                transform: scale(4);
+                transform: scale(3.5);
                 opacity: 0;
             }
         }
@@ -108,38 +110,26 @@
         /* Glowing background blobs */
         .glow-blob {
             filter: blur(140px);
-            opacity: 0.35;
-            mix-blend-mode: plus-lighter;
-            pointer-events: none;
-        }
-
-        /* Scanline effect for loading screen */
-        .scanline::after {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 10;
-            background-size: 100% 2px, 3px 100%;
+            opacity: 0.45;
+            mix-blend-mode: multiply;
             pointer-events: none;
         }
     </style>
 </head>
-<body class="text-slate-100 min-h-screen relative antialiased selection:bg-blue-500/30 selection:text-blue-200">
-    <!-- Ambient Background Lighting -->
+<body class="text-slate-800 min-h-screen relative antialiased selection:bg-blue-500/10 selection:text-blue-600">
+    <!-- Ambient Background Lighting (Light Theme) -->
     <div class="fixed inset-0 overflow-hidden -z-10">
-        <div class="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] rounded-full bg-gradient-to-br from-blue-600/20 to-indigo-600/5 glow-blob animate-pulse-slow"></div>
-        <div class="absolute -bottom-[20%] -right-[10%] w-[55%] h-[55%] rounded-full bg-gradient-to-tr from-indigo-600/10 to-violet-600/20 glow-blob animate-pulse-slow" style="animation-delay: 2s;"></div>
-        <div class="absolute top-[35%] left-[25%] w-[40%] h-[40%] rounded-full bg-blue-500/5 glow-blob animate-pulse-slow" style="animation-delay: 1s;"></div>
+        <div class="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] rounded-full bg-gradient-to-br from-blue-300/30 to-indigo-200/10 glow-blob animate-pulse-slow"></div>
+        <div class="absolute -bottom-[20%] -right-[10%] w-[55%] h-[55%] rounded-full bg-gradient-to-tr from-indigo-200/20 to-violet-300/30 glow-blob animate-pulse-slow" style="animation-delay: 2s;"></div>
+        <div class="absolute top-[35%] left-[25%] w-[40%] h-[40%] rounded-full bg-blue-100/20 glow-blob animate-pulse-slow" style="animation-delay: 1s;"></div>
         <!-- Grid overlay -->
-        <div class="absolute inset-0 bg-[linear-gradient(to_right,#1f29370a_1px,transparent_1px),linear-gradient(to_bottom,#1f29370a_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"></div>
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#0f172a04_1px,transparent_1px),linear-gradient(to_bottom,#0f172a04_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_80%,transparent_100%)]"></div>
     </div>
 
     <div class="max-w-6xl mx-auto px-6 py-12 md:py-20">
         <!-- Pull to Refresh Visual Indicator -->
-        <div id="pull-indicator" class="h-0 overflow-hidden flex items-center justify-center transition-all duration-300 w-full mb-6 opacity-0">
-            <div class="flex items-center gap-2.5 px-4 py-2 rounded-full glass-panel border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+        <div id="pull-indicator" class="h-0 overflow-hidden flex items-center justify-center transition-all duration-200 w-full mb-6 opacity-0">
+            <div class="flex items-center gap-2.5 px-4 py-2 rounded-full glass-panel border-blue-500/20 text-blue-600 text-xs font-semibold uppercase tracking-wider">
                 <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3-3 3 3m-3-3v12"></path>
                 </svg>
@@ -148,32 +138,32 @@
         </div>
 
         <!-- Header Section -->
-        <header class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 relative pb-6 border-b border-slate-800/40">
+        <header class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 relative pb-6 border-b border-slate-200">
             <div>
                 <div class="flex items-center gap-3 mb-3">
-                    <div class="h-8 w-8 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <div class="h-8 w-8 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/10">
                         <svg class="w-4 h-4 text-white font-bold" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/>
                         </svg>
                     </div>
-                    <span class="text-xs font-semibold tracking-[0.2em] text-blue-400 uppercase">Drawer Box Specialties</span>
+                    <span class="text-xs font-semibold tracking-[0.2em] text-blue-600 uppercase">Drawer Box Specialties</span>
                 </div>
-                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
                     Operations Hub
                 </h1>
-                <p class="text-slate-500 mt-2 text-sm font-medium tracking-wide">INTERNAL APPLICATIONS CONTROL & MONITORING</p>
+                <p class="text-slate-400 mt-2 text-sm font-medium tracking-wide">INTERNAL APPLICATIONS CONTROL & MONITORING</p>
             </div>
             
             <!-- Search & Actions -->
             <div class="relative w-full md:w-80 group">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                    <svg class="w-4 h-4 text-slate-400 group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </span>
                 <input type="text" id="search" placeholder="Search systems..." 
-                    class="w-full pl-11 pr-5 py-3.5 rounded-2xl glass-panel text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/30 transition-all duration-300">
-                <div class="absolute right-3.5 top-3.5 hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-slate-800/60 border border-slate-700/50 text-[10px] font-bold text-slate-400 select-none">
+                    class="w-full pl-11 pr-5 py-3.5 rounded-2xl glass-panel text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/20 transition-all duration-200">
+                <div class="absolute right-3.5 top-3.5 hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-400 select-none">
                     <span>Ctrl</span><span>K</span>
                 </div>
             </div>
@@ -186,7 +176,7 @@
                     <div class="absolute inset-0 rounded-full border-2 border-t-blue-500 border-r-transparent border-b-indigo-500 border-l-transparent animate-spin-slow"></div>
                     <div class="absolute inset-2 rounded-full border border-t-transparent border-r-violet-500 border-b-transparent border-l-pink-500 animate-spin"></div>
                 </div>
-                <div class="text-sm font-semibold tracking-wider text-slate-400 animate-pulse uppercase">Scanning production network...</div>
+                <div class="text-sm font-semibold tracking-wider text-slate-500 animate-pulse uppercase">Scanning production network...</div>
             </div>
         </div>
     </div>
@@ -203,11 +193,11 @@
 
                 if (apps.length === 0) {
                     grid.innerHTML = `
-                        <div class="col-span-full py-16 text-center rounded-3xl border border-dashed border-slate-800/80 bg-slate-900/10">
-                            <svg class="w-10 h-10 mx-auto text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="col-span-full py-16 text-center rounded-3xl border border-dashed border-slate-300 bg-slate-50">
+                            <svg class="w-10 h-10 mx-auto text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                             </svg>
-                            <p class="text-slate-400 text-sm font-medium">No active production apps found.</p>
+                            <p class="text-slate-500 text-sm font-medium">No active production apps found.</p>
                         </div>`;
                     return;
                 }
@@ -217,26 +207,26 @@
                        class="glass-card relative block p-7 rounded-[24px] overflow-hidden group flex flex-col justify-between min-h-[190px]">
                         <div>
                             <div class="flex items-center justify-between mb-5">
-                                <div class="p-3 bg-blue-500/10 rounded-2xl group-hover:bg-blue-500/20 text-blue-400 transition-colors duration-300">
+                                <div class="p-3 bg-blue-500/10 rounded-2xl group-hover:bg-blue-500/20 text-blue-600 transition-colors duration-200">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
                                     </svg>
                                 </div>
-                                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
                                     <span>Active</span>
                                 </div>
                             </div>
-                            <h2 class="text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors duration-300 capitalize tracking-tight">
+                            <h2 class="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors duration-200 capitalize tracking-tight">
                                 ${app.name.replace(/-/g, ' ')}
                             </h2>
-                            <p class="text-slate-400 text-xs mt-2.5 leading-relaxed line-clamp-3">
+                            <p class="text-slate-500 text-xs mt-2.5 leading-relaxed line-clamp-3">
                                 ${app.description || 'Custom production workflow tool.'}
                             </p>
                         </div>
-                        <div class="flex items-center justify-between mt-6 pt-4 border-t border-slate-800/40">
-                            <span class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Production App</span>
-                            <span class="text-xs text-blue-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300 flex items-center gap-1">
+                        <div class="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+                            <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Production App</span>
+                            <span class="text-xs text-blue-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200 flex items-center gap-1">
                                 Launch
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
@@ -248,11 +238,11 @@
 
             } catch (error) {
                 grid.innerHTML = `
-                    <div class="col-span-full py-16 text-center rounded-3xl border border-rose-500/20 bg-rose-500/5">
-                        <svg class="w-10 h-10 mx-auto text-rose-500/70 mb-3 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="col-span-full py-16 text-center rounded-3xl border border-rose-200 bg-rose-50/50">
+                        <svg class="w-10 h-10 mx-auto text-rose-500 mb-3 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                         </svg>
-                        <p class="text-rose-400 text-sm font-semibold">Error connecting to GitHub network.</p>
+                        <p class="text-rose-600 text-sm font-semibold">Error connecting to GitHub network.</p>
                         <p class="text-rose-500/70 text-xs mt-1">Please verify network connection and try again.</p>
                     </div>`;
             }
@@ -337,7 +327,7 @@
 
         gridEl.addEventListener('touchend', () => {
             if (!activeCard) return;
-            activeCard.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+            activeCard.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
             activeCard.style.transform = 'translateX(0)';
             activeCard = null;
         });
@@ -390,7 +380,7 @@
                             <div class="absolute inset-0 rounded-full border-2 border-t-blue-500 border-r-transparent border-b-indigo-500 border-l-transparent animate-spin-slow"></div>
                             <div class="absolute inset-2 rounded-full border border-t-transparent border-r-violet-500 border-b-transparent border-l-pink-500 animate-spin"></div>
                         </div>
-                        <div class="text-sm font-semibold tracking-wider text-slate-400 animate-pulse uppercase">Refreshing network status...</div>
+                        <div class="text-sm font-semibold tracking-wider text-slate-500 animate-pulse uppercase">Refreshing network status...</div>
                     </div>`;
                 await loadApps();
             }
