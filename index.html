@@ -15,6 +15,8 @@
                     animation: {
                         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'spin-slow': 'spin 8s linear infinite',
+                        'float-slow': 'float 9s ease-in-out infinite',
+                        'aurora': 'aurora 14s ease-in-out infinite alternate',
                     }
                 }
             }
@@ -24,29 +26,44 @@
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
         
         body {
-            background-color: #f8fafc;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 32rem),
+                radial-gradient(circle at 85% 18%, rgba(168, 85, 247, 0.14), transparent 30rem),
+                linear-gradient(135deg, #f8fafc 0%, #eef4ff 48%, #fdfcff 100%);
             overflow-x: hidden;
         }
 
         /* Glassmorphism utility - Light Theme */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(15, 23, 42, 0.06);
-            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.52));
+            backdrop-filter: blur(24px) saturate(140%);
+            -webkit-backdrop-filter: blur(24px) saturate(140%);
+            border: 1px solid rgba(255, 255, 255, 0.76);
+            box-shadow:
+                0 18px 45px -28px rgba(15, 23, 42, 0.32),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
         }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(15, 23, 42, 0.05);
-            box-shadow: 0 10px 25px -10px rgba(15, 23, 42, 0.05);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            background:
+                linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.58)),
+                radial-gradient(circle at 18% 12%, rgba(59, 130, 246, 0.08), transparent 35%);
+            backdrop-filter: blur(22px) saturate(150%);
+            -webkit-backdrop-filter: blur(22px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.82);
+            box-shadow:
+                0 18px 45px -30px rgba(15, 23, 42, 0.55),
+                0 10px 25px -20px rgba(37, 99, 235, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            transition:
+                transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.42s ease,
+                background 0.42s ease;
             position: relative;
             user-select: none;
             -webkit-user-select: none;
+            isolation: isolate;
         }
 
         .glass-card::before {
@@ -55,23 +72,51 @@
             inset: 0;
             border-radius: inherit;
             padding: 1.5px;
-            background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0), rgba(236, 72, 153, 0.03));
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.36), rgba(99, 102, 241, 0.08), rgba(236, 72, 153, 0.18));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
-            transition: opacity 0.25s ease;
+            transition: opacity 0.35s ease;
+            opacity: 0.75;
+            z-index: -1;
+        }
+
+        .glass-card::after {
+            content: '';
+            position: absolute;
+            inset: -40% -20% auto auto;
+            width: 9rem;
+            height: 9rem;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.18), transparent 65%);
+            opacity: 0;
+            transform: translate3d(20px, -20px, 0);
+            transition: opacity 0.42s ease, transform 0.42s ease;
+            pointer-events: none;
+            z-index: -1;
         }
 
         .glass-card:hover {
-            transform: translateY(-4px);
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 20px 35px -12px rgba(59, 130, 246, 0.12),
-                        0 0 0 1px rgba(59, 130, 246, 0.25);
+            transform: translateY(-8px) scale(1.012);
+            background:
+                linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.72)),
+                radial-gradient(circle at 18% 12%, rgba(59, 130, 246, 0.14), transparent 35%);
+            border-color: rgba(147, 197, 253, 0.85);
+            box-shadow:
+                0 30px 65px -34px rgba(15, 23, 42, 0.58),
+                0 26px 50px -28px rgba(37, 99, 235, 0.48),
+                0 0 0 1px rgba(147, 197, 253, 0.3);
         }
 
         .glass-card:hover::before {
-            background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.3), rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.1));
+            opacity: 1;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.58), rgba(99, 102, 241, 0.26), rgba(236, 72, 153, 0.26));
+        }
+
+        .glass-card:hover::after {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
         }
 
         /* Tapped / Depressed Active State (Quick Response) */
@@ -109,10 +154,57 @@
 
         /* Glowing background blobs */
         .glow-blob {
-            filter: blur(140px);
-            opacity: 0.45;
+            filter: blur(120px);
+            opacity: 0.58;
             mix-blend-mode: multiply;
             pointer-events: none;
+        }
+
+        .aurora-layer {
+            background:
+                conic-gradient(from 180deg at 50% 50%, rgba(59, 130, 246, 0.16), rgba(168, 85, 247, 0.16), rgba(14, 165, 233, 0.12), rgba(59, 130, 246, 0.16));
+            filter: blur(72px);
+            opacity: 0.7;
+            transform-origin: center;
+        }
+
+        .noise-layer {
+            background-image:
+                radial-gradient(rgba(15, 23, 42, 0.12) 0.65px, transparent 0.65px);
+            background-size: 14px 14px;
+            opacity: 0.035;
+            pointer-events: none;
+        }
+
+        .hero-shell {
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.44)),
+                radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 26rem);
+            border: 1px solid rgba(255, 255, 255, 0.78);
+            box-shadow:
+                0 30px 80px -48px rgba(15, 23, 42, 0.55),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(28px) saturate(145%);
+            -webkit-backdrop-filter: blur(28px) saturate(145%);
+        }
+
+        .stat-panel {
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+        }
+
+        .stat-panel:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 22px 45px -34px rgba(15, 23, 42, 0.58);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(18px, -18px, 0) scale(1.04); }
+        }
+
+        @keyframes aurora {
+            0% { transform: translate3d(-4%, -2%, 0) rotate(0deg) scale(1); }
+            100% { transform: translate3d(4%, 3%, 0) rotate(12deg) scale(1.08); }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -128,11 +220,14 @@
 <body class="text-slate-800 min-h-screen relative antialiased selection:bg-blue-500/10 selection:text-blue-600">
     <!-- Ambient Background Lighting (Light Theme) -->
     <div class="fixed inset-0 overflow-hidden -z-10">
-        <div class="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] rounded-full bg-gradient-to-br from-blue-300/30 to-indigo-200/10 glow-blob animate-pulse-slow"></div>
-        <div class="absolute -bottom-[20%] -right-[10%] w-[55%] h-[55%] rounded-full bg-gradient-to-tr from-indigo-200/20 to-violet-300/30 glow-blob animate-pulse-slow" style="animation-delay: 2s;"></div>
-        <div class="absolute top-[35%] left-[25%] w-[40%] h-[40%] rounded-full bg-blue-100/20 glow-blob animate-pulse-slow" style="animation-delay: 1s;"></div>
+        <div class="absolute inset-[-18%] aurora-layer animate-aurora"></div>
+        <div class="absolute -top-[18%] -left-[12%] w-[55%] h-[55%] rounded-full bg-gradient-to-br from-blue-300/45 to-cyan-200/10 glow-blob animate-float-slow"></div>
+        <div class="absolute -bottom-[24%] -right-[12%] w-[58%] h-[58%] rounded-full bg-gradient-to-tr from-indigo-300/28 to-violet-300/45 glow-blob animate-float-slow" style="animation-delay: 2s;"></div>
+        <div class="absolute top-[32%] left-[30%] w-[38%] h-[38%] rounded-full bg-sky-200/25 glow-blob animate-float-slow" style="animation-delay: 1s;"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.88),transparent_36rem)]"></div>
+        <div class="absolute inset-0 noise-layer"></div>
         <!-- Grid overlay -->
-        <div class="absolute inset-0 bg-[linear-gradient(to_right,#0f172a04_1px,transparent_1px),linear-gradient(to_bottom,#0f172a04_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_80%,transparent_100%)]"></div>
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#0f172a08_1px,transparent_1px),linear-gradient(to_bottom,#0f172a08_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:radial-gradient(ellipse_70%_55%_at_50%_44%,#000_62%,transparent_100%)]"></div>
     </div>
 
     <div class="max-w-6xl mx-auto px-6 py-12 md:py-20">
@@ -147,7 +242,9 @@
         </div>
 
         <!-- Header Section -->
-        <header class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-8 relative pb-6 border-b border-slate-200">
+        <header class="hero-shell flex flex-col md:flex-row md:items-end justify-between mb-8 gap-8 relative rounded-[2rem] p-6 md:p-8 overflow-hidden">
+            <div class="absolute right-0 top-0 h-32 w-32 rounded-full bg-blue-400/10 blur-2xl"></div>
+            <div class="absolute left-8 bottom-0 h-px w-2/3 bg-gradient-to-r from-blue-500/40 via-indigo-400/20 to-transparent"></div>
             <div>
                 <div class="flex items-center gap-3 mb-3">
                     <div class="h-8 w-8 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/10">
@@ -192,15 +289,15 @@
         </header>
 
         <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10" aria-label="Dashboard summary">
-            <div class="glass-panel rounded-3xl p-5">
+            <div class="glass-panel stat-panel rounded-3xl p-5">
                 <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Live Apps</div>
                 <div id="stat-live-apps" class="mt-2 text-3xl font-extrabold text-slate-900">--</div>
             </div>
-            <div class="glass-panel rounded-3xl p-5">
+            <div class="glass-panel stat-panel rounded-3xl p-5">
                 <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">GitHub Pages</div>
                 <div id="stat-pages" class="mt-2 text-3xl font-extrabold text-emerald-600">--</div>
             </div>
-            <div class="glass-panel rounded-3xl p-5">
+            <div class="glass-panel stat-panel rounded-3xl p-5">
                 <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Status</div>
                 <div id="stat-status" class="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-bold text-slate-600">
                     <span class="h-2 w-2 rounded-full bg-slate-400"></span>
@@ -323,6 +420,8 @@
             return `
                 <a href="${pageUrl}" target="_blank" rel="noopener noreferrer"
                    class="glass-card relative block p-7 rounded-[24px] overflow-hidden group flex flex-col justify-between min-h-[210px] focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                    <div class="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-blue-500/10 to-transparent pointer-events-none"></div>
+                    <div class="absolute -right-10 -bottom-10 h-28 w-28 rounded-full bg-gradient-to-br from-blue-400/10 to-indigo-500/10 blur-2xl pointer-events-none transition-transform duration-500 group-hover:scale-125"></div>
                     <div>
                         <div class="flex items-center justify-between mb-5">
                             <div class="p-3 bg-blue-500/10 rounded-2xl group-hover:bg-blue-500/20 text-blue-600 transition-colors duration-200">
