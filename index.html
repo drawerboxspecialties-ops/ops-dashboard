@@ -257,7 +257,7 @@
                 <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
                     Operations Hub
                 </h1>
-                <p class="text-slate-500 mt-2 text-sm font-medium tracking-wide">LIVE INTERNAL TOOLS, GITHUB PAGES STATUS & QUICK LAUNCH</p>
+                <p class="text-slate-500 mt-2 text-sm font-medium tracking-wide">LIVE INTERNAL TOOLS · GITHUB PAGES · VERCEL · QUICK LAUNCH</p>
             </div>
             
             <!-- Search & Actions -->
@@ -294,7 +294,7 @@
                 <div id="stat-live-apps" class="mt-2 text-3xl font-extrabold text-slate-900">--</div>
             </div>
             <div class="glass-panel stat-panel rounded-3xl p-5">
-                <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">GitHub Pages</div>
+                <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Pages / Vercel</div>
                 <div id="stat-pages" class="mt-2 text-3xl font-extrabold text-emerald-600">--</div>
             </div>
             <div class="glass-panel stat-panel rounded-3xl p-5">
@@ -320,6 +320,28 @@
 
     <script>
         const ORG_NAME = 'drawerboxspecialties-ops';
+
+        /**
+         * Vercel-hosted apps (not GitHub Pages).
+         * Add new tools here so they appear on the hub.
+         */
+        const VERCEL_APPS = [
+            {
+                name: 'dbs-reports',
+                description: 'DBS Reports hub — shipping report by actual ship date, with grace period and payment. Future Allmoxy reports live here too.',
+                url: 'https://dbs-shipping-report.vercel.app',
+                host: 'Vercel',
+                updated_at: '2026-07-25T00:00:00.000Z'
+            },
+            {
+                name: 'dbs-allmoxy-chatbot',
+                description: 'Company Allmoxy assistant for orders, customers, invoices, and payments.',
+                url: 'https://allmoxy-ops-chat.vercel.app',
+                host: 'Vercel',
+                updated_at: '2026-07-24T00:00:00.000Z'
+            }
+        ];
+
         const gridEl = document.getElementById('app-grid');
         const searchInput = document.getElementById('search');
         const refreshButton = document.getElementById('refresh-button');
@@ -331,6 +353,8 @@
         const pullText = document.getElementById('pull-text');
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let allApps = [];
+        let pagesCount = 0;
+        let vercelCount = 0;
 
         function escapeHTML(value) {
             return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -415,10 +439,14 @@
             const safeName = escapeHTML(formatAppName(app.name));
             const safeDescription = escapeHTML(app.description || 'Custom production workflow tool.');
             const safeUpdated = escapeHTML(formatDate(app.updated_at));
-            const pageUrl = `https://${ORG_NAME}.github.io/${encodeURIComponent(app.name)}/`;
+            const host = app.host || 'Pages';
+            const pageUrl = app.url || `https://${ORG_NAME}.github.io/${encodeURIComponent(app.name)}/`;
+            const hostBadge = host === 'Vercel'
+                ? 'bg-violet-500/10 border-violet-500/20 text-violet-700'
+                : 'bg-sky-500/10 border-sky-500/20 text-sky-700';
 
             return `
-                <a href="${pageUrl}" target="_blank" rel="noopener noreferrer"
+                <a href="${escapeHTML(pageUrl)}" target="_blank" rel="noopener noreferrer"
                    class="glass-card relative block p-7 rounded-[24px] overflow-hidden group flex flex-col justify-between min-h-[210px] focus:outline-none focus:ring-2 focus:ring-blue-500/40">
                     <div class="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-blue-500/10 to-transparent pointer-events-none"></div>
                     <div class="absolute -right-10 -bottom-10 h-28 w-28 rounded-full bg-gradient-to-br from-blue-400/10 to-indigo-500/10 blur-2xl pointer-events-none transition-transform duration-500 group-hover:scale-125"></div>
@@ -429,9 +457,14 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
                                 </svg>
                             </div>
-                            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 ${prefersReducedMotion ? '' : 'animate-ping'}"></span>
-                                <span>Live</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="px-2 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider ${hostBadge}">
+                                    ${escapeHTML(host)}
+                                </span>
+                                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 ${prefersReducedMotion ? '' : 'animate-ping'}"></span>
+                                    <span>Live</span>
+                                </div>
                             </div>
                         </div>
                         <h2 class="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors duration-200 tracking-tight">
@@ -460,7 +493,7 @@
                 : apps;
 
             if (apps.length === 0) {
-                renderEmptyState('No active production apps found.', 'Repos must have GitHub Pages enabled to appear here.');
+                renderEmptyState('No active production apps found.', 'Enable GitHub Pages or add the app to the Vercel list in index.html.');
                 return;
             }
 
@@ -487,12 +520,28 @@
                 }
 
                 const repos = await response.json();
-                allApps = repos
+                const pageApps = repos
                     .filter(repo => repo.has_pages && repo.name !== 'ops-dashboard')
+                    .map(repo => ({
+                        name: repo.name,
+                        description: repo.description,
+                        updated_at: repo.updated_at,
+                        host: 'Pages',
+                        url: `https://${ORG_NAME}.github.io/${encodeURIComponent(repo.name)}/`
+                    }));
+
+                const pageNames = new Set(pageApps.map(app => app.name.toLowerCase()));
+                const vercelApps = VERCEL_APPS.filter(
+                    app => !pageNames.has(String(app.name).toLowerCase())
+                );
+
+                pagesCount = pageApps.length;
+                vercelCount = vercelApps.length;
+                allApps = [...vercelApps, ...pageApps]
                     .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
                 liveAppsEl.textContent = allApps.length;
-                pagesEl.textContent = allApps.length;
+                pagesEl.textContent = `${pagesCount} / ${vercelCount}`;
                 setStatus(allApps.length ? 'online' : 'warning', allApps.length ? 'Online' : 'No Apps');
                 lastUpdatedEl.textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
                 renderApps(allApps);
