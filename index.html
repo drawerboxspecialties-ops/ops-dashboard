@@ -141,6 +141,15 @@
                 updated_at: '2026-07-30T00:00:00.000Z'
             },
             {
+                name: 'dbs-rta-quote-calculator',
+                title: 'DBS RTA Quote Calculator',
+                description: 'RTA cabinet quote tool on Vercel — customer quotes, materials, and pricing.',
+                url: 'https://dbs-rta-quote-calculator.vercel.app',
+                host: 'Vercel',
+                alongsidePages: true,
+                updated_at: '2026-07-31T00:00:00.000Z'
+            },
+            {
                 name: 'dbs-reports',
                 title: 'DBS Reports',
                 description: 'Shipping, Margin Desk, and Manufacturing Desk in one hub.',
@@ -330,9 +339,11 @@
                 }
 
                 const pageNames = new Set(pageApps.map(app => app.name.toLowerCase()));
-                const vercelApps = VERCEL_APPS.filter(
-                    app => !pageNames.has(String(app.name).toLowerCase())
-                );
+                const vercelApps = VERCEL_APPS.filter(app => {
+                    const key = String(app.name).toLowerCase();
+                    if (app.alongsidePages) return true;
+                    return !pageNames.has(key);
+                });
 
                 allApps = [...vercelApps, ...pageApps]
                     .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
