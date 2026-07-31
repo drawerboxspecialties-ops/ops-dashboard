@@ -120,30 +120,15 @@
     <script>
         const ORG_NAME = 'drawerboxspecialties-ops';
 
-        const MATERIAL_REQUEST_URL = 'https://dbs-material-request-form.vercel.app';
-
         /** Extra in-card links keyed by lowercase repo / app name. */
-        const APP_EXTRA_LINKS = {
-            'dbs-rta-quote-calculator': [
-                { label: 'Request material', url: MATERIAL_REQUEST_URL }
-            ]
-        };
+        const APP_EXTRA_LINKS = {};
 
         /** Vercel-hosted apps. Add future tools here. */
         const VERCEL_APPS = [
             {
-                name: 'dbs-material-request-form',
-                title: 'Request Material',
-                description: 'Live material, hardware, and edgeband request board — submit requests, track status, and reply with prices.',
-                url: MATERIAL_REQUEST_URL,
-                cta: 'Request material',
-                host: 'Vercel',
-                updated_at: '2026-07-30T00:00:00.000Z'
-            },
-            {
                 name: 'dbs-rta-quote-calculator',
                 title: 'DBS RTA Quote Calculator',
-                description: 'RTA cabinet quote tool on Vercel — customer quotes, materials, and pricing.',
+                description: 'RTA cabinet quotes, pricing, Sheets sync, and in-app material requests.',
                 url: 'https://dbs-rta-quote-calculator.vercel.app',
                 host: 'Vercel',
                 alongsidePages: true,
