@@ -131,7 +131,6 @@
                 description: 'RTA cabinet quotes, Sheets sync, and built-in material requests in one app.',
                 url: 'https://dbs-rta-quote-calculator.vercel.app/quote/index.html',
                 host: 'Vercel',
-                alongsidePages: true,
                 updated_at: '2026-07-31T00:00:00.000Z'
             },
             {
@@ -292,8 +291,16 @@
             }
 
             const repos = await response.json();
+            const hiddenPageRepos = new Set([
+                'ops-dashboard',
+                'dbs-rta-quote-calculator'
+            ]);
+
             return repos
-                .filter(repo => repo.has_pages && repo.name !== 'ops-dashboard')
+                .filter(repo =>
+                    repo.has_pages &&
+                    !hiddenPageRepos.has(String(repo.name).toLowerCase())
+                )
                 .map(repo => {
                     const key = String(repo.name).toLowerCase();
                     return {
