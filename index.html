@@ -126,6 +126,16 @@
         /** Vercel-hosted apps. Add future tools here. */
         const VERCEL_APPS = [
             {
+                name: 'cutflow',
+                title: 'CutFlow',
+                description: 'Local cut-sheet organizer + HP M611 print. Opens the shop PC app only (Always On must be running).',
+                url: 'http://127.0.0.1:5055',
+                host: 'Local',
+                cta: 'Open local',
+                alongsidePages: true,
+                updated_at: '2026-08-14T00:00:00.000Z'
+            },
+            {
                 name: 'dbs-rta-quote-calculator',
                 title: 'DBS RTA Quote Calculator',
                 description: 'RTA cabinet quotes, Sheets sync, and built-in material requests in one app.',
@@ -220,7 +230,9 @@
             const pageUrl = app.url || `https://${ORG_NAME}.github.io/${encodeURIComponent(app.name)}/`;
             const hostClass = host === 'Vercel'
                 ? 'bg-teal-50 text-teal-800'
-                : 'bg-stone-100 text-stone-600';
+                : host === 'Local'
+                    ? 'bg-amber-50 text-amber-900'
+                    : 'bg-stone-100 text-stone-600';
             const ctaLabel = escapeHTML(app.cta || 'Open');
             const extraLinks = Array.isArray(app.extraLinks) ? app.extraLinks : [];
             const extraLinksHtml = extraLinks.map(link => `
