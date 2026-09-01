@@ -121,24 +121,23 @@
         const ORG_NAME = 'drawerboxspecialties-ops';
 
         /** Extra in-card links keyed by lowercase repo / app name. */
-        const APP_EXTRA_LINKS = {};
+        const APP_EXTRA_LINKS = {
+            'dbs-safety': [
+                { label: 'Sign-in', url: 'https://drawerboxspecialties-ops.github.io/dbs-safety/meetings/sign-in/' },
+                { label: 'This month', url: 'https://drawerboxspecialties-ops.github.io/dbs-safety/meetings/' }
+            ]
+        };
+
+        /** Title and description overrides for GitHub Pages repos. */
+        const PAGE_APP_OVERRIDES = {
+            'dbs-safety': {
+                title: 'DBS Safety',
+                description: 'Safety meetings, sign-in, and training record. Catch a department when you have time.'
+            }
+        };
 
         /** Vercel-hosted apps. Add future tools here. */
         const VERCEL_APPS = [
-            {
-                name: 'dbs-safety',
-                title: 'DBS Safety',
-                description: 'Safety meetings, sign-in, and training record. Catch a department when you have time.',
-                url: 'https://drawerboxspecialties-ops.github.io/dbs-safety/',
-                host: 'Pages',
-                cta: 'Open',
-                alongsidePages: true,
-                extraLinks: [
-                    { label: 'Sign-in', url: 'https://drawerboxspecialties-ops.github.io/dbs-safety/meetings/sign-in/' },
-                    { label: 'This month', url: 'https://drawerboxspecialties-ops.github.io/dbs-safety/meetings/' }
-                ],
-                updated_at: '2026-09-01T00:00:00.000Z'
-            },
             {
                 name: 'cutflow',
                 title: 'CutFlow',
@@ -337,10 +336,11 @@
                 )
                 .map(repo => {
                     const key = String(repo.name).toLowerCase();
+                    const override = PAGE_APP_OVERRIDES[key] || {};
                     return {
                         name: repo.name,
-                        title: formatAppName(repo.name),
-                        description: repo.description,
+                        title: override.title || formatAppName(repo.name),
+                        description: override.description || repo.description,
                         updated_at: repo.updated_at,
                         host: 'Pages',
                         url: `https://${ORG_NAME}.github.io/${encodeURIComponent(repo.name)}/`,
