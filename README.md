@@ -2,7 +2,7 @@
 
 Internal tool directory for **Drawer Box Specialties**.
 
-- **Hub:** https://web-sooty-nu-86.vercel.app
+- **Hub:** https://dbs-ops-hub.vercel.app
 - **GitHub Pages shortcut:** https://drawerboxspecialties-ops.github.io/ops-dashboard/
 - **Repo:** https://github.com/drawerboxspecialties-ops/ops-dashboard
 
