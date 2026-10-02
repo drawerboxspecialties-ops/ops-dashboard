@@ -64,7 +64,7 @@ function LoginForm() {
         {mfa ? (
           <>
             <p className="muted">
-              Enter the 6-digit authenticator code. No phone? Enter the backup code. It is case sensitive.
+              Enter the 6-digit authenticator code, or the packing-desk backup code. The backup is case sensitive and is not 6 digits.
             </p>
             <label>
               Authenticator or backup code

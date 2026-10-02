@@ -47,9 +47,34 @@ export async function passwordMatches(candidate: string) {
   return matchesSecret(hubPassword(), candidate);
 }
 
+function backupCodeLooksValid(value: string) {
+  const compact = value.trim();
+  if (compact.length < 4 || compact.length > 32) return false;
+  return !/^\d{6}$/.test(compact);
+}
+
+async function hashBackupCode(code: string) {
+  const pepper = hubPassword();
+  const normalized = code.trim();
+  const data = encoder.encode(`${pepper}:backup:${normalized}`);
+  return hex(await crypto.subtle.digest("SHA-256", data));
+}
+
+function storedBackupHashes() {
+  return (process.env.HUB_BACKUP_HASHES ?? "")
+    .split(/[,\s]+/)
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => value.length === 64);
+}
+
 export async function backupCodeMatches(candidate: string) {
+  const compact = candidate.trim();
+  if (!compact) return false;
   const recovery = process.env.HUB_MFA_RECOVERY?.trim() ?? "";
-  return matchesSecret(recovery, candidate.trim());
+  if (recovery && (await matchesSecret(recovery, compact))) return true;
+  if (!backupCodeLooksValid(compact)) return false;
+  const hashed = await hashBackupCode(compact);
+  return storedBackupHashes().some((hash) => safeEqual(hash, hashed));
 }
 
 export async function hubCookieValue() {

@@ -45,7 +45,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Enter the hub password again." }, { status: 401 });
       }
       if (!(await secondFactorMatches(code))) {
-        return NextResponse.json({ error: "Wrong authenticator or backup code." }, { status: 401 });
+        const message = /^\d{6}$/.test(code)
+          ? "Wrong authenticator code."
+          : "Wrong backup code. It is case sensitive and is not the 6-digit authenticator code.";
+        return NextResponse.json({ error: message }, { status: 401 });
       }
       return unlockHub();
     }
