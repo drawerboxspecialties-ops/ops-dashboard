@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Route XL to CSV</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c1917;
+      --muted: #57534e;
+      --line: #e7e5e4;
+      --paper: #fafaf9;
+      --card: #ffffff;
+      --warn: #9f1239;
+      --button: #1c1917;
+      --button-text: #fafaf9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    h1 { margin: 0 0 8px; font-size: 32px; line-height: 1.15; }
+    .lead { max-width: 46rem; margin: 0 0 24px; color: var(--muted); line-height: 1.5; }
+    label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 12px;
+      border: 1px solid #d6d3d1;
+      border-radius: 10px;
+      font: 13px/1.45 Consolas, "Courier New", monospace;
+      resize: vertical;
+      background: var(--card);
+    }
+    textarea:focus { outline: 2px solid #a8a29e; border-color: #a8a29e; }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+    }
+    button {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font: 600 14px/1 "Segoe UI", Helvetica, Arial, sans-serif;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.45; cursor: default; }
+    #save {
+      background: var(--button);
+      color: var(--button-text);
+    }
+    #clear { background: var(--card); border-color: #d6d3d1; }
+    .meta, .status { margin: 0; font-size: 14px; color: var(--muted); }
+    .status { color: var(--ink); font-weight: 600; }
+    .warning { margin: 8px 0 0; color: var(--warn); font-size: 14px; }
+    section.preview {
+      margin-top: 24px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .preview h2 {
+      margin: 0;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .empty { margin: 0; padding: 28px 16px; color: var(--muted); font-size: 14px; }
+    .table-wrap { overflow: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { padding: 8px 12px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
+    th { background: #f5f5f4; font-weight: 600; white-space: nowrap; }
+    td { max-width: 280px; }
+    @media (max-width: 640px) {
+      h1 { font-size: 26px; }
+      .actions { align-items: stretch; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Drawer Box Specialties</p>
+    <h1>Route XL to CSV</h1>
+    <p class="lead">Paste the text from Get www.routexl.com Data. Save CSV writes the OptimoRoute file. If the save window opens, choose the Desktop. In OptimoRoute, use Browse and pick that file.</p>
+    <label for="route-text">Route XL text</label>
+    <textarea id="route-text" spellcheck="false" placeholder='"Order ID","PO","Date","Location name","Address","Boxes","Payment Terms","Order Total","Total Amount"'></textarea>
+    <div class="actions">
+      <button id="save" type="button" disabled>Save CSV</button>
+      <button id="clear" type="button" disabled>Clear</button>
+      <p id="meta" class="meta">Paste the Route XL text, then save.</p>
+    </div>
+    <p id="status" class="status" hidden></p>
+    <div id="warnings"></div>
+    <section class="preview">
+      <h2>Preview</h2>
+      <p id="empty" class="empty">The preview shows one row per stop after the columns are split. Address commas stay inside the Address column.</p>
+      <div id="table-wrap" class="table-wrap" hidden></div>
+    </section>
+  </main>
+  <script>
+    function isBlankRow(row) {
+      return row.every(function (cell) { return cell.trim() === ""; });
+    }
+
+    function parseDelimited(text, delimiter) {
+      var source = text.replace(/^\uFEFF/, "");
+      var rows = [];
+      var row = [];
+      var field = "";
+      var inQuotes = false;
+      for (var index = 0; index < source.length; index += 1) {
+        var character = source.charAt(index);
+        if (inQuotes) {
+          if (character === '"') {
+            if (source.charAt(index + 1) === '"') {
+              field += '"';
+              index += 1;
+            } else {
+              inQuotes = false;
+            }
+          } else {
+            field += character;
+          }
+          continue;
+        }
+        if (character === '"') {
+          inQuotes = true;
+          continue;
+        }
+        if (character === delimiter) {
+          row.push(field);
+          field = "";
+          continue;
+        }
+        if (character === "\n" || (character === "\r" && source.charAt(index + 1) !== "\n")) {
+          row.push(field);
+          field = "";
+          rows.push(row);
+          row = [];
+          continue;
+        }
+        if (character !== "\r") field += character;
+      }
+      if (field.length > 0 || row.length > 0) {
+        row.push(field);
+        rows.push(row);
+      }
+      return rows.filter(function (entry) { return !isBlankRow(entry); });
+    }
+
+    function columnCount(rows) {
+      return rows.reduce(function (widest, row) { return Math.max(widest, row.length); }, 0);
+    }
+
+    function parseRouteText(input) {
+      var trimmed = input.replace(/^\uFEFF/, "").trim();
+      if (!trimmed) return { headers: [], rows: [], warnings: [] };
+      var table = parseDelimited(trimmed, ",");
+      if (columnCount(table) <= 1 && trimmed.indexOf("\t") !== -1) {
+        table = parseDelimited(trimmed, "\t");
+      }
+      var headerRow = table[0] || [];
+      var dataRows = table.slice(1);
+      var headers = headerRow.map(function (cell) { return cell.trim(); });
+      var rows = dataRows.map(function (row) {
+        return headers.map(function (_, index) { return row[index] || ""; });
+      });
+      var warnings = [];
+      if (columnCount(table) <= 1) {
+        warnings.push("This paste is still one column. Copy the Route XL text again, including the header line on its own row.");
+      }
+      dataRows.forEach(function (row, index) {
+        if (row.length !== headers.length) {
+          warnings.push("Stop " + (index + 1) + " has " + row.length + " fields and the header has " + headers.length + ". That row would split wrong in OptimoRoute.");
+        }
+      });
+      return { headers: headers, rows: rows, warnings: warnings };
+    }
+
+    function quoteField(value) {
+      return '"' + String(value).split('"').join('""') + '"';
+    }
+
+    function toCsv(headers, rows) {
+      var lines = [headers].concat(rows).map(function (row) {
+        return row.map(quoteField).join(",");
+      });
+      return lines.join("\r\n") + "\r\n";
+    }
+
+    function suggestedFilename(headers, rows) {
+      var dateIndex = -1;
+      headers.forEach(function (header, index) {
+        if (header.trim().toLowerCase() === "date") dateIndex = index;
+      });
+      var dates = {};
+      var dateList = [];
+      rows.forEach(function (row) {
+        var value = dateIndex >= 0 ? String(row[dateIndex] || "").trim() : "";
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value) && !dates[value]) {
+          dates[value] = true;
+          dateList.push(value);
+        }
+      });
+      if (dateList.length === 1) return "RouteXL-" + dateList[0] + ".csv";
+      var now = new Date();
+      var month = String(now.getMonth() + 1);
+      var day = String(now.getDate());
+      if (month.length < 2) month = "0" + month;
+      if (day.length < 2) day = "0" + day;
+      return "RouteXL-" + now.getFullYear() + "-" + month + "-" + day + ".csv";
+    }
+
+    var sourceBox = document.getElementById("route-text");
+    var saveButton = document.getElementById("save");
+    var clearButton = document.getElementById("clear");
+    var meta = document.getElementById("meta");
+    var status = document.getElementById("status");
+    var warnings = document.getElementById("warnings");
+    var empty = document.getElementById("empty");
+    var tableWrap = document.getElementById("table-wrap");
+    var sheet = { headers: [], rows: [], warnings: [] };
+
+    function render() {
+      sheet = parseRouteText(sourceBox.value);
+      var ready = sheet.headers.length > 1 && sheet.rows.length > 0;
+      saveButton.disabled = !ready;
+      clearButton.disabled = sourceBox.value.length === 0;
+      status.hidden = true;
+      warnings.textContent = "";
+      sheet.warnings.forEach(function (warning) {
+        var line = document.createElement("p");
+        line.className = "warning";
+        line.textContent = warning;
+        warnings.appendChild(line);
+      });
+      if (!ready) {
+        meta.textContent = sourceBox.value.trim()
+          ? "The columns did not split. Check the message above."
+          : "Paste the Route XL text, then save.";
+        empty.hidden = false;
+        tableWrap.hidden = true;
+        tableWrap.textContent = "";
+        return;
+      }
+      var filename = suggestedFilename(sheet.headers, sheet.rows);
+      meta.textContent = sheet.rows.length + " stop" + (sheet.rows.length === 1 ? "" : "s") + ", " + sheet.headers.length + " columns. File name: " + filename;
+      empty.hidden = true;
+      tableWrap.hidden = false;
+      var table = document.createElement("table");
+      var thead = document.createElement("thead");
+      var headRow = document.createElement("tr");
+      sheet.headers.forEach(function (header) {
+        var cell = document.createElement("th");
+        cell.textContent = header;
+        headRow.appendChild(cell);
+      });
+      thead.appendChild(headRow);
+      var tbody = document.createElement("tbody");
+      sheet.rows.forEach(function (row) {
+        var bodyRow = document.createElement("tr");
+        sheet.headers.forEach(function (_, index) {
+          var cell = document.createElement("td");
+          cell.textContent = row[index] || "";
+          bodyRow.appendChild(cell);
+        });
+        tbody.appendChild(bodyRow);
+      });
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      tableWrap.textContent = "";
+      tableWrap.appendChild(table);
+    }
+
+    function downloadCsv(filename, csv) {
+      var blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    sourceBox.addEventListener("input", render);
+
+    clearButton.addEventListener("click", function () {
+      sourceBox.value = "";
+      render();
+    });
+
+    saveButton.addEventListener("click", function () {
+      if (saveButton.disabled) return;
+      var filename = suggestedFilename(sheet.headers, sheet.rows);
+      var csv = toCsv(sheet.headers, sheet.rows);
+      var picker = window.showSaveFilePicker;
+      var hosted = location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+      if (picker && hosted) {
+        picker({
+          suggestedName: filename,
+          startIn: "desktop",
+          types: [{ description: "CSV file", accept: { "text/csv": [".csv"] } }]
+        }).then(function (handle) {
+          return handle.createWritable().then(function (writable) {
+            return writable.write(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" })).then(function () {
+              return writable.close();
+            });
+          });
+        }).then(function () {
+          status.hidden = false;
+          status.textContent = "Saved " + filename + ". If the window opened somewhere else, choose Desktop and click Save.";
+        }).catch(function (error) {
+          if (error && error.name === "AbortError") {
+            status.hidden = false;
+            status.textContent = "Save cancelled.";
+            return;
+          }
+          downloadCsv(filename, csv);
+          status.hidden = false;
+          status.textContent = "Downloaded " + filename + ". Drag it from Downloads onto the Desktop if you want it there.";
+        });
+        return;
+      }
+      downloadCsv(filename, csv);
+      status.hidden = false;
+      status.textContent = "Downloaded " + filename + ". Drag it from Downloads onto the Desktop if you want it there.";
+    });
+  </script>
+</body>
+</html>

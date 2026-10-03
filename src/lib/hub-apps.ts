@@ -69,7 +69,7 @@ export const VERCEL_APPS: HubApp[] = [
   {
     name: "ups-packaging",
     title: "UPS Packaging",
-    description: "Pack cartons, shop UPS rates, and print 4\u00d76 labels from Allmoxy orders.",
+    description: "Pack cartons, shop UPS rates, and print 4×6 labels from Allmoxy orders.",
     url: "https://ups-packaging.vercel.app",
     host: "Vercel",
     updated_at: "2026-08-21T00:00:00.000Z",
