@@ -33,6 +33,14 @@ export const PAGE_APP_OVERRIDES: Record<string, { title: string; description: st
 
 export const VERCEL_APPS: HubApp[] = [
   {
+    name: "route-xl-to-csv",
+    title: "Route XL to CSV",
+    description: "Paste Route XL text and save the OptimoRoute CSV, with boxes, payment terms, and dollar totals.",
+    url: "https://dbs-ops-hub.vercel.app/RouteXL-to-CSV.html",
+    host: "Vercel",
+    updated_at: "2026-10-03T02:00:00.000Z",
+  },
+  {
     name: "dbs-cv-helpbot",
     title: "CV Help",
     description: "Cabinet Vision 2026 assistant. Ask about a screen, command, or setting.",
@@ -61,7 +69,7 @@ export const VERCEL_APPS: HubApp[] = [
   {
     name: "ups-packaging",
     title: "UPS Packaging",
-    description: "Pack cartons, shop UPS rates, and print 4×6 labels from Allmoxy orders.",
+    description: "Pack cartons, shop UPS rates, and print 4\u00d76 labels from Allmoxy orders.",
     url: "https://ups-packaging.vercel.app",
     host: "Vercel",
     updated_at: "2026-08-21T00:00:00.000Z",
