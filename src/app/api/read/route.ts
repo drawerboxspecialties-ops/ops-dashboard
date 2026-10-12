@@ -227,7 +227,7 @@ notes explain anything a person should check, especially low-confidence sizes. U
 sourceFile is the filename of the attachment the piece came from.
 seenAs is the exact size text copied from that row, such as "14 1/2 x 30, qty 2, 2 each". Keep the sheet's words. Use an empty string only when no size text is visible.
 explanation is one sentence of how you understood that row: which number is the width, which is the height, how a fraction or a millimeter became decimal inches, and where the hinge count came from. Do not calculate square feet.
-markX and markY are the center of that row on the page, as a percentage of the page. 0 is the left or top edge and 100 is the right or bottom edge. page is the 1-based page number in that file. If you cannot place the row, use -1 for markX and markY and 1 for page.
+markX and markY are the center of the written size itself, the dimension text, as a percentage of that page. 0 is the left or top edge and 100 is the right or bottom edge. Place every size you can see. page is the 1-based page number in that file. If you cannot place the row, use -1 for markX and markY and 1 for page.
 documentNotes covers the job, room, or a finish that applies to the whole sheet. Say whether the sizes are printed or handwritten, and name the unit.
 unitsDetected is "in", "mm", "mixed", or "unknown".
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { PdfPage } from "@/components/slab/pdf-page";
 import { sizeWork, type PricedLine } from "@/lib/slab/pricing";
-import type { Confidence } from "@/lib/slab/types";
+import type { Confidence, SizeReading } from "@/lib/slab/types";
 import { cardClass, isPdf, type StagedFile } from "@/components/slab/sheet-ui";
 
 function sameFile(source: string | null, name: string): boolean {
@@ -20,6 +21,10 @@ function confidenceLabel(confidence: Confidence | null): string {
 
 function pieceName(row: PricedLine): string {
   return row.line.label || (row.line.kind === "drawer" ? "Drawer front" : "Door");
+}
+
+function placed(mark: SizeReading | null): mark is SizeReading & { markX: number; markY: number } {
+  return Boolean(mark && mark.markX !== null && mark.markY !== null);
 }
 
 export function UploadPreview({
@@ -44,18 +49,39 @@ export function UploadPreview({
   const sheetRows = fromFile.length > 0 ? fromFile : selected ? rows.filter((row) => row.line.widthIn > 0 && row.line.heightIn > 0) : [];
   const tiedToFile = fromFile.length > 0;
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [pageCount, setPageCount] = useState(1);
+  const [manualPage, setManualPage] = useState<number | null>(null);
   const active = sheetRows.find((row) => row.line.id === activeId) ?? sheetRows[0] ?? null;
   const activeIndex = active ? Math.max(0, sheetRows.findIndex((row) => row.line.id === active.line.id)) : 0;
-  const page = active?.line.reading?.page ?? 1;
-  const mark = active?.line.reading ?? null;
-  const work = active ? sizeWork(active.line.widthIn, active.line.heightIn, active.line.quantity) : null;
-  const holes = active && active.line.hingeHolesEach > 0 ? Math.round(active.line.hingeHolesEach) : 0;
+  const page = manualPage ?? active?.line.reading?.page ?? 1;
+
+  function choose(id: string) {
+    setManualPage(null);
+    setActiveId(id);
+  }
 
   function step(delta: number) {
     if (sheetRows.length === 0) return;
     const next = sheetRows[(activeIndex + delta + sheetRows.length) % sheetRows.length];
-    setActiveId(next.line.id);
+    choose(next.line.id);
   }
+
+  const review =
+    selected && (sheetRows.length > 0 || reading) ? (
+      <SizeReview
+        rows={sheetRows}
+        active={active}
+        activeIndex={activeIndex}
+        note={note}
+        tiedToFile={tiedToFile}
+        reading={reading}
+        page={page}
+        pageCount={pageCount}
+        onChoose={choose}
+        onStep={step}
+        onPage={(next) => setManualPage(next)}
+      />
+    ) : null;
 
   return (
     <section className={`${cardClass} print:hidden xl:sticky xl:top-4`}>
@@ -82,38 +108,16 @@ export function UploadPreview({
       ) : null}
       <div className="mt-3 overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-200">
         {selected?.preview && isPdf(selected.file) ? (
-          <iframe
-            key={`${selected.id}-${page}`}
-            title={selected.file.name}
-            src={`${selected.preview}#page=${page}&view=FitH`}
-            className="h-[min(34vh,18rem)] w-full bg-white"
-          />
+          <PdfPage file={selected.file} page={page} onPages={setPageCount}>
+            {review}
+          </PdfPage>
         ) : selected?.preview && selected.file.type.startsWith("image/") ? (
-          <div className="flex h-[min(34vh,18rem)] items-center justify-center">
-            <div className="relative h-full w-fit max-w-full">
+          <div className="flex max-h-[min(62vh,36rem)] items-center justify-center">
+            <div className="relative w-fit max-w-full">
               {/* Local preview of a file the user just dropped. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={selected.preview} alt={selected.file.name} className="h-full max-w-full object-contain" />
-              {sheetRows.map((row, index) => {
-                const pin = row.line.reading;
-                if (!pin || pin.markX === null || pin.markY === null || pin.page !== page) return null;
-                const on = row.line.id === active?.line.id;
-                return (
-                  <button
-                    key={row.line.id}
-                    type="button"
-                    aria-pressed={on}
-                    aria-label={`${pieceName(row)} was read here`}
-                    onClick={() => setActiveId(row.line.id)}
-                    style={{ left: `${pin.markX}%`, top: `${pin.markY}%` }}
-                    className={`absolute z-10 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-semibold ring-2 ring-white ${
-                      on ? "bg-teal-800 text-white" : "bg-stone-800 text-white"
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                );
-              })}
+              <img src={selected.preview} alt={selected.file.name} className="block max-h-[min(62vh,36rem)] max-w-full object-contain" />
+              {review}
             </div>
           </div>
         ) : (
@@ -122,71 +126,110 @@ export function UploadPreview({
           </p>
         )}
       </div>
-
-      {selected && active && work ? (
-        <div className="mt-3 rounded-xl bg-stone-50 p-3 ring-1 ring-stone-200">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-stone-900">How this size was worked out</h3>
-            <span className="text-xs text-stone-500">
-              {activeIndex + 1} of {sheetRows.length}
-            </span>
-          </div>
-          <div className="mt-2 flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold text-stone-900">
-              {activeIndex + 1}. {pieceName(active)}
-            </p>
-            <p className="shrink-0 text-xs text-stone-500">
-              {confidenceLabel(active.line.confidence)}
-              {mark && mark.page > 1 ? ` · page ${mark.page}` : ""}
-            </p>
-          </div>
-          {mark?.seenAs ? <p className="mt-1 text-sm text-stone-500">Copied “{mark.seenAs}”</p> : null}
-          {mark?.explanation ? <p className="mt-1 text-sm text-stone-800">{mark.explanation}</p> : null}
-          <p className="mt-2 text-sm font-medium tabular-nums text-stone-900">{work.formula}</p>
-          <p className="mt-1 text-xs text-stone-500">
-            {holes > 0
-              ? `${holes} hinge ${holes === 1 ? "hole" : "holes"} on each of ${Math.round(active.line.quantity)}.`
-              : "No hinge holes on this row."}
-            {mark ? "" : " Read the sheet again to keep the words the model copied."}
-            {!tiedToFile ? " These pieces are on the quote. Read the sheet again to tie each one to this file." : ""}
-          </p>
-          {note ? <p className="mt-1 text-xs text-stone-500">{note}</p> : null}
-          {sheetRows.length > 1 ? (
-            <div className="mt-2 flex items-center gap-2">
-              <button type="button" className="shrink-0 rounded-lg bg-white px-2 py-1 text-xs font-semibold text-stone-800 ring-1 ring-stone-200" onClick={() => step(-1)}>
-                Previous
-              </button>
-              <div className="flex min-w-0 gap-1 overflow-x-auto">
-                {sheetRows.map((row, index) => {
-                  const on = row.line.id === active.line.id;
-                  return (
-                    <button
-                      key={row.line.id}
-                      type="button"
-                      aria-pressed={on}
-                      aria-label={`${pieceName(row)} calculation`}
-                      onClick={() => setActiveId(row.line.id)}
-                      className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                        on ? "bg-teal-800 text-white" : "bg-white text-stone-800 ring-1 ring-stone-200"
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  );
-                })}
-              </div>
-              <button type="button" className="shrink-0 rounded-lg bg-white px-2 py-1 text-xs font-semibold text-stone-800 ring-1 ring-stone-200" onClick={() => step(1)}>
-                Next
-              </button>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {reading && selected ? <p className="mt-3 text-sm text-stone-500">Reading the sizes on this sheet…</p> : null}
       {selected && sheetRows.length === 0 && !reading ? (
-        <p className="mt-3 text-sm text-stone-500">No sizes yet. Read the drawing and the working for each piece shows here, on the sheet.</p>
+        <p className="mt-3 text-sm text-stone-500">No sizes yet. Read the drawing and each size is reviewed on the page.</p>
       ) : null}
     </section>
+  );
+}
+
+function SizeReview({
+  rows,
+  active,
+  activeIndex,
+  note,
+  tiedToFile,
+  reading,
+  page,
+  pageCount,
+  onChoose,
+  onStep,
+  onPage,
+}: {
+  rows: PricedLine[];
+  active: PricedLine | null;
+  activeIndex: number;
+  note: string;
+  tiedToFile: boolean;
+  reading: boolean;
+  page: number;
+  pageCount: number;
+  onChoose: (id: string) => void;
+  onStep: (delta: number) => void;
+  onPage: (page: number) => void;
+}) {
+  const mark = active?.line.reading ?? null;
+  const work = active ? sizeWork(active.line.widthIn, active.line.heightIn, active.line.quantity) : null;
+  const holes = active && active.line.hingeHolesEach > 0 ? Math.round(active.line.hingeHolesEach) : 0;
+
+  return (
+    <>
+      {rows.map((row, index) => {
+        const pin = row.line.reading;
+        if (!placed(pin) || pin.page !== page) return null;
+        const on = row.line.id === active?.line.id;
+        return (
+          <button
+            key={row.line.id}
+            type="button"
+            aria-pressed={on}
+            aria-label={`${pieceName(row)} on the page`}
+            onClick={() => onChoose(row.line.id)}
+            style={{ left: `${pin.markX}%`, top: `${pin.markY}%` }}
+            className={`absolute z-30 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-semibold ring-2 ring-white ${
+              on ? "bg-teal-800 text-white" : "bg-stone-800 text-white"
+            }`}
+          >
+            {index + 1}
+          </button>
+        );
+      })}
+      <div className="absolute inset-x-2 top-2 z-20 flex items-center gap-1">
+        {rows.length > 1 ? (
+          <button type="button" className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-800 shadow ring-1 ring-stone-200" onClick={() => onStep(-1)}>
+            Previous
+          </button>
+        ) : null}
+        <p className="min-w-0 truncate rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-900 shadow ring-1 ring-stone-200">
+          {reading && rows.length === 0 ? "Reading sizes on this page…" : active ? `${activeIndex + 1} of ${rows.length} · ${pieceName(active)}` : "No sizes on this page"}
+          {pageCount > 1 ? ` · page ${page}/${pageCount}` : ""}
+        </p>
+        {rows.length > 1 ? (
+          <button type="button" className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-800 shadow ring-1 ring-stone-200" onClick={() => onStep(1)}>
+            Next
+          </button>
+        ) : null}
+        {pageCount > 1 ? (
+          <span className="ml-auto flex gap-1">
+            <button type="button" className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-800 shadow ring-1 ring-stone-200" onClick={() => onPage(Math.max(1, page - 1))}>
+              Page up
+            </button>
+            <button type="button" className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-800 shadow ring-1 ring-stone-200" onClick={() => onPage(Math.min(pageCount, page + 1))}>
+              Page down
+            </button>
+          </span>
+        ) : null}
+      </div>
+      {active && work ? (
+        <div className="absolute inset-x-2 bottom-2 z-20 rounded-xl bg-white/95 p-2.5 text-left shadow-lg ring-1 ring-stone-300">
+          <p className="text-xs font-semibold text-stone-500">
+            {confidenceLabel(active.line.confidence) || "On the quote"}
+            {placed(mark) ? "" : " · not marked on the page yet"}
+          </p>
+          <p className="text-sm font-semibold text-stone-900">
+            {activeIndex + 1}. {pieceName(active)}
+          </p>
+          {mark?.seenAs ? <p className="mt-1 text-xs text-stone-500">Copied “{mark.seenAs}”</p> : null}
+          {mark?.explanation ? <p className="mt-1 text-xs text-stone-800">{mark.explanation}</p> : null}
+          <p className="mt-1 text-sm font-medium tabular-nums text-stone-900">{work.formula}</p>
+          <p className="mt-1 text-[11px] leading-snug text-stone-500">
+            {holes > 0 ? `${holes} hinge ${holes === 1 ? "hole" : "holes"} on each of ${Math.round(active.line.quantity)}.` : "No hinge holes on this row."}
+            {placed(mark) ? "" : " Replace current lines to mark this size on the page."}
+            {!tiedToFile ? " These pieces are on the quote." : ""}
+            {note ? ` ${note}` : ""}
+          </p>
+        </div>
+      ) : null}
+    </>
   );
 }
