@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { PdfPage } from "@/components/slab/pdf-page";
-import { sizeWork, type PricedLine } from "@/lib/slab/pricing";
-import type { Confidence, SizeReading } from "@/lib/slab/types";
-import { cardClass, isPdf, type StagedFile } from "@/components/slab/sheet-ui";
+import { formatInches, parseInches, sizeWork, type PricedLine } from "@/lib/slab/pricing";
+import type { Confidence, LineItem, SizeReading } from "@/lib/slab/types";
+import { cardClass, fieldClass, isPdf, type StagedFile } from "@/components/slab/sheet-ui";
 
 function sameFile(source: string | null, name: string): boolean {
   if (!source) return false;
@@ -34,6 +34,8 @@ export function UploadPreview({
   rows,
   note,
   reading,
+  onUpdate,
+  onAddPiece,
 }: {
   files: StagedFile[];
   selectedId: string | null;
@@ -41,11 +43,11 @@ export function UploadPreview({
   rows: PricedLine[];
   note: string;
   reading: boolean;
+  onUpdate: (id: string, patch: Partial<LineItem>) => void;
+  onAddPiece: (fileName: string) => string;
 }) {
   const selected = files.find((item) => item.id === selectedId) ?? null;
-  const fromFile = selected
-    ? rows.filter((row) => sameFile(row.line.sourceFile, selected.file.name) && (row.line.widthIn > 0 || row.line.heightIn > 0))
-    : [];
+  const fromFile = selected ? rows.filter((row) => sameFile(row.line.sourceFile, selected.file.name)) : [];
   const sheetRows = fromFile.length > 0 ? fromFile : selected ? rows.filter((row) => row.line.widthIn > 0 && row.line.heightIn > 0) : [];
   const tiedToFile = fromFile.length > 0;
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export function UploadPreview({
         onChoose={choose}
         onStep={step}
         onPage={(next) => setManualPage(next)}
+        onUpdate={onUpdate}
       />
     ) : null;
 
@@ -126,8 +129,19 @@ export function UploadPreview({
           </p>
         )}
       </div>
-      {selected && sheetRows.length === 0 && !reading ? (
-        <p className="mt-3 text-sm text-stone-500">No sizes yet. Read the drawing and each size is reviewed on the page.</p>
+      {selected && !reading ? (
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-stone-500">
+            {sheetRows.length === 0 ? "Read the drawing, or type a size on it." : "Change a size on the sheet. The quote follows."}
+          </p>
+          <button
+            type="button"
+            className="shrink-0 rounded-lg bg-stone-100 px-2.5 py-1.5 text-xs font-semibold text-stone-800"
+            onClick={() => choose(onAddPiece(selected.file.name))}
+          >
+            Add a size
+          </button>
+        </div>
       ) : null}
     </section>
   );
@@ -145,6 +159,7 @@ function SizeReview({
   onChoose,
   onStep,
   onPage,
+  onUpdate,
 }: {
   rows: PricedLine[];
   active: PricedLine | null;
@@ -157,10 +172,10 @@ function SizeReview({
   onChoose: (id: string) => void;
   onStep: (delta: number) => void;
   onPage: (page: number) => void;
+  onUpdate: (id: string, patch: Partial<LineItem>) => void;
 }) {
   const mark = active?.line.reading ?? null;
   const work = active ? sizeWork(active.line.widthIn, active.line.heightIn, active.line.quantity) : null;
-  const holes = active && active.line.hingeHolesEach > 0 ? Math.round(active.line.hingeHolesEach) : 0;
 
   return (
     <>
@@ -220,16 +235,125 @@ function SizeReview({
             {activeIndex + 1}. {pieceName(active)}
           </p>
           {mark?.seenAs ? <p className="mt-1 text-xs text-stone-500">Copied “{mark.seenAs}”</p> : null}
-          {mark?.explanation ? <p className="mt-1 text-xs text-stone-800">{mark.explanation}</p> : null}
-          <p className="mt-1 text-sm font-medium tabular-nums text-stone-900">{work.formula}</p>
-          <p className="mt-1 text-[11px] leading-snug text-stone-500">
-            {holes > 0 ? `${holes} hinge ${holes === 1 ? "hole" : "holes"} on each of ${Math.round(active.line.quantity)}.` : "No hinge holes on this row."}
-            {placed(mark) ? "" : " Replace current lines to mark this size on the page."}
-            {!tiedToFile ? " These pieces are on the quote." : ""}
-            {note ? ` ${note}` : ""}
-          </p>
+          <div className="mt-2 grid grid-cols-4 gap-1.5">
+            <LiveInch label="Width" value={active.line.widthIn} onCommit={(widthIn) => onUpdate(active.line.id, { widthIn })} />
+            <LiveInch label="Height" value={active.line.heightIn} onCommit={(heightIn) => onUpdate(active.line.id, { heightIn })} />
+            <LiveCount label="Qty" value={active.line.quantity} fallback={1} onCommit={(quantity) => onUpdate(active.line.id, { quantity })} />
+            <LiveCount label="Hinges" value={active.line.hingeHolesEach} fallback={0} onCommit={(hingeHolesEach) => onUpdate(active.line.id, { hingeHolesEach })} />
+          </div>
+          <p className="mt-1.5 text-sm font-medium tabular-nums text-stone-900">{work.formula}</p>
+          {mark?.explanation ? <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-stone-500">{mark.explanation}</p> : null}
+          {!placed(mark) || !tiedToFile || note ? (
+            <p className="mt-1 text-[11px] leading-snug text-stone-500">
+              {placed(mark) ? "" : "This size is not marked on the page yet. "}
+              {!tiedToFile ? "These pieces are on the quote. " : ""}
+              {note}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </>
+  );
+}
+
+function LiveInch({ label, value, onCommit }: { label: string; value: number; onCommit: (value: number) => void }) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [invalid, setInvalid] = useState(false);
+  const text = focused || invalid ? draft : value > 0 ? formatInches(value) : "";
+
+  return (
+    <label className="block text-[10px] font-semibold text-stone-500">
+      {label}
+      <input
+        aria-label={`${label} on the sheet`}
+        inputMode="decimal"
+        value={text}
+        aria-invalid={invalid}
+        className={`${fieldClass} mt-0.5 h-7 px-1.5 py-0 text-xs tabular-nums`}
+        onFocus={() => {
+          setFocused(true);
+          setDraft(value > 0 ? formatInches(value) : "");
+        }}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          if (next.trim() === "") {
+            setInvalid(false);
+            onCommit(0);
+            return;
+          }
+          const parsed = parseInches(next);
+          if (parsed === null) return;
+          setInvalid(false);
+          onCommit(parsed);
+        }}
+        onBlur={() => {
+          setFocused(false);
+          if (draft.trim() === "") {
+            setInvalid(false);
+            onCommit(0);
+            return;
+          }
+          const parsed = parseInches(draft);
+          if (parsed === null) {
+            setInvalid(true);
+            return;
+          }
+          setInvalid(false);
+          onCommit(parsed);
+        }}
+      />
+    </label>
+  );
+}
+
+function LiveCount({
+  label,
+  value,
+  fallback,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  fallback: number;
+  onCommit: (value: number) => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  const text = focused ? draft : String(value);
+
+  return (
+    <label className="block text-[10px] font-semibold text-stone-500">
+      {label}
+      <input
+        aria-label={`${label} on the sheet`}
+        inputMode="numeric"
+        value={text}
+        className={`${fieldClass} mt-0.5 h-7 px-1.5 py-0 text-xs tabular-nums`}
+        onFocus={() => {
+          setFocused(true);
+          setDraft(String(value));
+        }}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          if (next.trim() === "") return;
+          const parsed = Number(next);
+          if (!Number.isInteger(parsed) || parsed < 0 || parsed > 500) return;
+          onCommit(parsed);
+        }}
+        onBlur={() => {
+          setFocused(false);
+          if (draft.trim() === "") {
+            onCommit(fallback);
+            return;
+          }
+          const parsed = Number(draft);
+          if (!Number.isInteger(parsed) || parsed < 0 || parsed > 500) return;
+          onCommit(parsed);
+        }}
+      />
+    </label>
   );
 }
