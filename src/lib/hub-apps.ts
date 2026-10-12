@@ -33,6 +33,14 @@ export const PAGE_APP_OVERRIDES: Record<string, { title: string; description: st
 
 export const VERCEL_APPS: HubApp[] = [
   {
+    name: "slab-measure",
+    title: "Slab Measure",
+    description: "Read a door schedule from a photo or PDF, then price slab doors and drawer fronts from the October 2026 list.",
+    url: "https://dbs-ops-hub.vercel.app/slab",
+    host: "Vercel",
+    updated_at: "2026-10-12T16:00:00.000Z",
+  },
+  {
     name: "route-xl-to-csv",
     title: "Route XL to CSV",
     description: "Paste Route XL text and save the OptimoRoute CSV, with boxes, payment terms, and dollar totals.",
