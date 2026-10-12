@@ -27,6 +27,11 @@ const extractionSchema = z.object({
       notes: z.string(),
       confidence: z.enum(["high", "medium", "low"]),
       sourceFile: z.string(),
+      seenAs: z.string(),
+      explanation: z.string(),
+      markX: z.number(),
+      markY: z.number(),
+      page: z.number(),
     }),
   ),
 });
@@ -179,6 +184,11 @@ export async function POST(request: Request) {
         notes: piece.notes.trim().slice(0, 240),
         confidence: piece.confidence,
         sourceFile: piece.sourceFile.trim().slice(0, 180) || prepared[0]?.name || "",
+        seenAs: piece.seenAs.trim().slice(0, 80),
+        explanation: piece.explanation.trim().slice(0, 240),
+        markX: markPercent(piece.markX),
+        markY: markPercent(piece.markY),
+        page: pageNumber(piece.page),
       };
     });
 
@@ -215,7 +225,10 @@ ${catalogForPrompt()}
 confidence is "high" when the size is printed, "medium" when it is handwritten but readable, and "low" when you are unsure.
 notes explain anything a person should check, especially low-confidence sizes. Use an empty string when there is nothing to flag.
 sourceFile is the filename of the attachment the piece came from.
-documentNotes covers the job, room, or a finish that applies to the whole sheet.
+seenAs is the exact size text copied from that row, such as "14 1/2 x 30, qty 2, 2 each". Keep the sheet's words. Use an empty string only when no size text is visible.
+explanation is one sentence of how you understood that row: which number is the width, which is the height, how a fraction or a millimeter became decimal inches, and where the hinge count came from. Do not calculate square feet.
+markX and markY are the center of that row on the page, as a percentage of the page. 0 is the left or top edge and 100 is the right or bottom edge. page is the 1-based page number in that file. If you cannot place the row, use -1 for markX and markY and 1 for page.
+documentNotes covers the job, room, or a finish that applies to the whole sheet. Say whether the sizes are printed or handwritten, and name the unit.
 unitsDetected is "in", "mm", "mixed", or "unknown".
 
 Skip fillers, toe kicks, face frames, finished ends, and panels that are not doors or drawer fronts.
@@ -235,6 +248,16 @@ async function gatewayReady(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function markPercent(value: number): number | null {
+  if (!Number.isFinite(value) || value < 0 || value > 100) return null;
+  return Math.round(value * 10) / 10;
+}
+
+function pageNumber(value: number): number {
+  if (!Number.isFinite(value) || value < 1) return 1;
+  return Math.min(30, Math.round(value));
 }
 
 function selectedModel(): string {
