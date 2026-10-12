@@ -301,13 +301,27 @@ export function SlabEstimator() {
             rows={quote.lines}
             note={readNote}
             reading={reading}
+            onUpdate={(id, patch) =>
+              updateJob((current) => ({
+                ...current,
+                lines: current.lines.map((line) => (line.id === id ? { ...line, ...patch } : line)),
+              }))
+            }
+            onAddPiece={(fileName) => {
+              const id = crypto.randomUUID();
+              updateJob((current) => ({
+                ...current,
+                lines: [...current.lines, { ...blankLine(id, current.finishId), sourceFile: fileName }],
+              }));
+              return id;
+            }}
           />
         </div>
 
         <aside className="print:hidden order-3 rounded-2xl border border-stone-200/80 bg-white/90 p-4 shadow-[0_10px_28px_-22px_rgba(19,32,28,0.45)] sm:p-5 xl:sticky xl:top-4 xl:col-start-3 xl:row-span-2 xl:row-start-1">
           <p className="text-[11px] font-semibold tracking-[0.16em] text-stone-500 uppercase">Quote</p>
           <p className="mt-1 font-display text-4xl font-bold tabular-nums text-stone-900">{formatSquareFeet(quote.squareFeet)}</p>
-          <p className="text-sm text-stone-500">square feet · {quote.pieceCount} pieces</p>
+          <p className="text-sm text-stone-500">square feet \u00b7 {quote.pieceCount} pieces</p>
           <p className="mt-2 font-display text-3xl font-bold tabular-nums text-stone-900">{formatMoney(quote.totalCents)}</p>
           <p className="text-sm text-stone-500">{basis === "list" ? "List" : "Minimum sale"} total</p>
 
@@ -323,10 +337,10 @@ export function SlabEstimator() {
           <dl className="mt-4 space-y-2 text-sm">
             <SummaryRow label="Material" value={formatMoney(quote.materialCents)} />
             <SummaryRow
-              label={quote.hingeHoles > 0 ? `Hinge boring · ${quote.hingeHoles} × ${formatMoney(HINGE_HOLE_CENTS)}` : "Hinge boring"}
+              label={quote.hingeHoles > 0 ? `Hinge boring \u00b7 ${quote.hingeHoles} \u00d7 ${formatMoney(HINGE_HOLE_CENTS)}` : "Hinge boring"}
               value={formatMoney(quote.hingeCents)}
             />
-            <SummaryRow label="Under 10 sq ft" value={quote.surchargeApplies ? formatMoney(quote.surchargeCents) : "—"} />
+            <SummaryRow label="Under 10 sq ft" value={quote.surchargeApplies ? formatMoney(quote.surchargeCents) : "\u2014"} />
           </dl>
 
           {quote.surchargeApplies ? (
@@ -363,7 +377,7 @@ export function SlabEstimator() {
             </label>
             <p className="text-xs text-stone-500">
               {finish.name}
-              {construction ? ` · ${construction.name}` : ""} · {formatRate(basis === "list" ? finish.listCents : finish.minimumCents)}
+              {construction ? ` \u00b7 ${construction.name}` : ""} \u00b7 {formatRate(basis === "list" ? finish.listCents : finish.minimumCents)}
               {basis === "list" ? ` list, ${formatRate(finish.minimumCents)} minimum` : ` minimum, ${formatRate(finish.listCents)} list`}
             </p>
             {mixedFinishes ? (
@@ -386,7 +400,7 @@ export function SlabEstimator() {
                   <li key={group.finishId} className="flex justify-between gap-3 tabular-nums">
                     <span className="truncate">
                       {group.finishName}
-                      <span className="text-stone-500"> · {formatSquareFeet(group.squareFeet)} sf</span>
+                      <span className="text-stone-500"> \u00b7 {formatSquareFeet(group.squareFeet)} sf</span>
                     </span>
                     <span>{formatMoney(group.materialCents)}</span>
                   </li>
