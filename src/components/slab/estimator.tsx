@@ -15,11 +15,13 @@ import {
   PrintQuote,
   SummaryRow,
   TextField,
+  UploadPreview,
   UploadTray,
   fieldClass,
   ghostButton,
   isAccepted,
   outlineButton,
+  previewable,
   toLine,
 } from "@/components/slab/sheet";
 
@@ -54,6 +56,8 @@ export function SlabEstimator() {
   const [readNote, setReadNote] = useState("");
   const [notice, setNotice] = useState<Notice | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const shownPreviewId = files.some((item) => item.id === previewId) ? previewId : (files.at(-1)?.id ?? null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -98,14 +102,14 @@ export function SlabEstimator() {
       if (next.length < accepted.length) {
         setNotice({ tone: "err", text: `Only ${MAX_FILES} files can sit in the tray.` });
       }
-      return [
-        ...current,
-        ...next.map((file) => ({
-          id: crypto.randomUUID(),
-          file,
-          preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
-        })),
-      ];
+      const staged = next.map((file) => ({
+        id: crypto.randomUUID(),
+        file,
+        preview: previewable(file) ? URL.createObjectURL(file) : null,
+      }));
+      const newest = staged.at(-1);
+      if (newest) setPreviewId(newest.id);
+      return [...current, ...staged];
     });
   }, []);
 
@@ -202,7 +206,7 @@ export function SlabEstimator() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 pb-28 sm:px-6 lg:pb-10">
+    <div className="mx-auto w-full max-w-[90rem] px-4 py-6 pb-28 sm:px-6 lg:pb-10">
       <header className="border-b border-stone-200 pb-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <a href="/" className="text-[11px] font-semibold tracking-[0.18em] text-teal-800 uppercase">
@@ -230,8 +234,8 @@ export function SlabEstimator() {
         </p>
       ) : null}
 
-      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="flex flex-col gap-6">
+      <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,32rem)_22rem]">
+        <div className="order-1 flex flex-col gap-6 xl:col-start-1">
           <div className="print:hidden">
             <UploadTray
               files={files}
@@ -242,6 +246,8 @@ export function SlabEstimator() {
               onRemove={removeFile}
               onRead={readFiles}
               onLoadSampleSizes={loadSampleSizes}
+              selectedId={shownPreviewId}
+              onSelect={setPreviewId}
             />
           </div>
           {readNote ? (
@@ -252,7 +258,9 @@ export function SlabEstimator() {
               </button>
             </p>
           ) : null}
-          <div className="print:hidden">
+        </div>
+        <div className="print:hidden order-4 flex flex-col gap-6 xl:col-start-1">
+          <div>
             <LineSheet
               rows={quote.lines}
               onAdd={() =>
@@ -275,12 +283,16 @@ export function SlabEstimator() {
               }
             />
           </div>
-          <div className="print:hidden">
+          <div>
             <PriceBook />
           </div>
         </div>
 
-        <aside className="print:hidden rounded-2xl border border-stone-200/80 bg-white/90 p-4 shadow-[0_10px_28px_-22px_rgba(19,32,28,0.45)] sm:p-5 lg:sticky lg:top-4">
+        <div className="print:hidden order-2 xl:sticky xl:top-4 xl:col-start-2 xl:row-span-2 xl:row-start-1">
+          <UploadPreview files={files} selectedId={shownPreviewId} onSelect={setPreviewId} />
+        </div>
+
+        <aside className="print:hidden order-3 rounded-2xl border border-stone-200/80 bg-white/90 p-4 shadow-[0_10px_28px_-22px_rgba(19,32,28,0.45)] sm:p-5 xl:sticky xl:top-4 xl:col-start-3 xl:row-span-2 xl:row-start-1">
           <p className="text-[11px] font-semibold tracking-[0.16em] text-stone-500 uppercase">Quote</p>
           <p className="mt-1 font-display text-4xl font-bold tabular-nums text-stone-900">{formatSquareFeet(quote.squareFeet)}</p>
           <p className="text-sm text-stone-500">square feet · {quote.pieceCount} pieces</p>
@@ -410,7 +422,7 @@ export function SlabEstimator() {
       </div>
 
       <div className="print:hidden fixed inset-x-0 bottom-0 z-20 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-6xl items-baseline justify-between">
+        <div className="mx-auto flex max-w-[90rem] items-baseline justify-between">
           <p className="text-sm text-stone-500">
             <span className="font-medium text-stone-900 tabular-nums">{formatSquareFeet(quote.squareFeet)}</span> sq ft
           </p>

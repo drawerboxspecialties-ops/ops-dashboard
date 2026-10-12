@@ -7,7 +7,15 @@ import type { Confidence, LineItem, PieceKind } from "@/lib/slab/types";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf,.jpg,.jpeg,.png,.webp,.gif";
 
-type StagedFile = { id: string; file: File; preview: string | null };
+export type StagedFile = { id: string; file: File; preview: string | null };
+
+export function previewable(file: File): boolean {
+  return file.type.startsWith("image/") || file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+}
+
+function isPdf(file: File): boolean {
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+}
 
 type ExtractedPiece = {
   label: string;
@@ -32,6 +40,8 @@ export function UploadTray({
   onRemove,
   onRead,
   onLoadSampleSizes,
+  selectedId,
+  onSelect,
 }: {
   files: StagedFile[];
   reading: boolean;
@@ -41,6 +51,8 @@ export function UploadTray({
   onRemove: (id: string) => void;
   onRead: (mode: "append" | "replace") => void;
   onLoadSampleSizes: () => void;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -119,8 +131,12 @@ export function UploadTray({
       {files.length > 0 ? (
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {files.map((item) => (
-            <li key={item.id} className="flex items-center gap-3 rounded-lg bg-stone-50 px-2 py-2">
-              {item.preview ? (
+            <li
+              key={item.id}
+              className={`flex items-center gap-3 rounded-lg px-2 py-2 ${item.id === selectedId ? "bg-teal-50 ring-1 ring-teal-700" : "bg-stone-50"}`}
+            >
+              <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => onSelect(item.id)}>
+              {item.preview && item.file.type.startsWith("image/") ? (
                 // Local preview of a file the user just dropped.
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={item.preview} alt="" className="size-12 rounded-md object-cover" />
@@ -133,6 +149,7 @@ export function UploadTray({
                 <span className="block truncate text-sm font-medium">{item.file.name}</span>
                 <span className="text-xs text-stone-500">{formatBytes(item.file.size)}</span>
               </span>
+              </button>
               <button type="button" className={ghostButton} aria-label={`Remove ${item.file.name}`} onClick={() => onRemove(item.id)}>
                 Remove
               </button>
@@ -159,6 +176,56 @@ export function UploadTray({
           File reading needs the AI Gateway on this deployment. The sample sizes and hand entry still price a quote.
         </p>
       ) : null}
+    </section>
+  );
+}
+
+export function UploadPreview({
+  files,
+  selectedId,
+  onSelect,
+}: {
+  files: StagedFile[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const selected = files.find((item) => item.id === selectedId) ?? null;
+  return (
+    <section className={`${cardClass} print:hidden xl:sticky xl:top-4`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-display text-xl font-bold text-stone-900">Sheet</h2>
+        <p className="truncate text-xs text-stone-500">{selected ? selected.file.name : "Nothing dropped yet"}</p>
+      </div>
+      {files.length > 1 ? (
+        <div className="mt-3 flex gap-2 overflow-x-auto">
+          {files.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={item.id === selected?.id}
+              onClick={() => onSelect(item.id)}
+              className={`max-w-40 shrink-0 truncate rounded-lg px-2 py-1 text-xs font-semibold ${
+                item.id === selected?.id ? "bg-teal-800 text-white" : "bg-stone-100 text-stone-700"
+              }`}
+            >
+              {item.file.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <div className="mt-3 overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-200">
+        {selected?.preview && isPdf(selected.file) ? (
+          <iframe title={selected.file.name} src={`${selected.preview}#view=FitH`} className="h-[min(70vh,42rem)] w-full bg-white" />
+        ) : selected?.preview && selected.file.type.startsWith("image/") ? (
+          // Local preview of a file the user just dropped.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={selected.preview} alt={selected.file.name} className="max-h-[min(70vh,42rem)] w-full object-contain" />
+        ) : (
+          <p className="px-4 py-16 text-center text-sm text-stone-500">
+            {selected ? "This file cannot be shown here." : "Drop a photo or PDF and it stays here, next to the quote."}
+          </p>
+        )}
+      </div>
     </section>
   );
 }
