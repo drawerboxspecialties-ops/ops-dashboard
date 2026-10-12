@@ -14,7 +14,7 @@ function sameFile(source: string | null, name: string): boolean {
 function confidenceLabel(confidence: Confidence | null): string {
   if (confidence === "high") return "Printed";
   if (confidence === "medium") return "Handwritten";
-  if (confidence === "low") return "Unsure \u2014 check it";
+  if (confidence === "low") return "Unsure — check it";
   return "";
 }
 
@@ -104,7 +104,7 @@ export function UploadPreview({
           </p>
         )}
       </div>
-      {reading && selected ? <p className="mt-3 text-sm text-stone-500">Reading the sizes on this sheet\u2026</p> : null}
+      {reading && selected ? <p className="mt-3 text-sm text-stone-500">Reading the sizes on this sheet…</p> : null}
       {sheetRows.length > 0 ? (
         <div className="mt-3">
           <h3 className="text-sm font-semibold text-stone-900">How this was read</h3>
@@ -129,10 +129,10 @@ export function UploadPreview({
                       </span>
                       <span className="shrink-0 text-xs text-stone-500">
                         {confidenceLabel(row.line.confidence)}
-                        {mark && mark.page > 1 ? ` \u00b7 page ${mark.page}` : ""}
+                        {mark && mark.page > 1 ? ` · page ${mark.page}` : ""}
                       </span>
                     </span>
-                    {mark?.seenAs ? <span className="mt-1 block text-sm text-stone-500">Copied \u201c{mark.seenAs}\u201d</span> : null}
+                    {mark?.seenAs ? <span className="mt-1 block text-sm text-stone-500">Copied “{mark.seenAs}”</span> : null}
                     {mark?.explanation ? <span className="mt-1 block text-sm text-stone-800">{mark.explanation}</span> : null}
                     <span className="mt-1 block text-sm tabular-nums text-stone-900">{work.formula}</span>
                     {holes > 0 ? (
