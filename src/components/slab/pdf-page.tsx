@@ -2,6 +2,25 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+const PDFJS_URL = "https://unpkg.com/pdfjs-dist@6.4.299/build/pdf.min.mjs";
+const PDFJS_WORKER_URL = "https://unpkg.com/pdfjs-dist@6.4.299/build/pdf.worker.min.mjs";
+
+type PdfViewport = { width: number; height: number };
+type PdfRenderTask = { promise: Promise<void>; cancel: () => void };
+type PdfPageProxy = {
+  getViewport: (params: { scale: number }) => PdfViewport;
+  render: (params: { canvasContext: CanvasRenderingContext2D; canvas: HTMLCanvasElement; viewport: PdfViewport }) => PdfRenderTask;
+};
+type PdfDocument = {
+  numPages: number;
+  getPage: (pageNumber: number) => Promise<PdfPageProxy>;
+};
+type PdfLoadingTask = { promise: Promise<PdfDocument>; destroy: () => Promise<void> };
+type Pdfjs = {
+  GlobalWorkerOptions: { workerSrc: string };
+  getDocument: (src: { data: Uint8Array }) => PdfLoadingTask;
+};
+
 export function PdfPage({
   file,
   page,
@@ -20,14 +39,14 @@ export function PdfPage({
 
   useEffect(() => {
     let cancelled = false;
-    let loadingTask: import("pdfjs-dist").PDFDocumentLoadingTask | null = null;
-    let renderTask: import("pdfjs-dist").RenderTask | null = null;
+    let loadingTask: PdfLoadingTask | null = null;
+    let renderTask: PdfRenderTask | null = null;
     setStatus("loading");
 
     (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        const pdfjs = (await new Function("url", "return import(url)")(PDFJS_URL)) as Pdfjs;
+        pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
         const data = new Uint8Array(await file.arrayBuffer());
         loadingTask = pdfjs.getDocument({ data });
         const doc = await loadingTask.promise;
@@ -62,7 +81,7 @@ export function PdfPage({
     <div className="flex max-h-[min(62vh,36rem)] items-center justify-center bg-white">
       <div className="relative w-fit max-w-full">
         <canvas ref={canvasRef} className="block max-h-[min(62vh,36rem)] max-w-full bg-white" />
-        {status === "loading" ? <p className="absolute inset-x-0 top-3 text-center text-sm text-stone-500">Opening this page…</p> : null}
+        {status === "loading" ? <p className="absolute inset-x-0 top-3 text-center text-sm text-stone-500">Opening this page.</p> : null}
         {status === "error" ? <p className="px-4 py-16 text-center text-sm text-stone-500">This PDF page could not be drawn.</p> : null}
         {status === "ready" ? children : null}
       </div>
