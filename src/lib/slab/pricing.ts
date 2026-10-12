@@ -235,6 +235,19 @@ export function formatSquareFeet(value: number): string {
   }).format(value);
 }
 
+export function formatMeasure(value: number): string {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 3 }).format(value);
+}
+
+/** Shop square-foot math for one line: width × height × quantity ÷ 144. */
+export function sizeWork(widthIn: number, heightIn: number, quantity: number): { squareInches: number; squareFeet: number; formula: string } {
+  const count = Number.isFinite(quantity) ? Math.max(0, Math.round(quantity)) : 0;
+  const area = squareInches(widthIn, heightIn, count);
+  const feet = squareFeetFromInches(area);
+  const formula = `${formatInches(widthIn)} × ${formatInches(heightIn)} × ${count} = ${formatMeasure(area)} sq in ÷ 144 = ${formatSquareFeet(feet)} sq ft`;
+  return { squareInches: area, squareFeet: feet, formula };
+}
+
 export function formatRate(cents: number): string {
   return `${formatMoney(cents)} / sq ft`;
 }

@@ -42,6 +42,11 @@ type ExtractedPiece = {
   notes: string;
   confidence: Confidence;
   sourceFile: string;
+  seenAs: string;
+  explanation: string;
+  markX: number | null;
+  markY: number | null;
+  page: number;
 };
 
 type StagedFile = { id: string; file: File; preview: string | null };
@@ -289,7 +294,14 @@ export function SlabEstimator() {
         </div>
 
         <div className="print:hidden order-2 xl:sticky xl:top-4 xl:col-start-2 xl:row-span-2 xl:row-start-1">
-          <UploadPreview files={files} selectedId={shownPreviewId} onSelect={setPreviewId} />
+          <UploadPreview
+            files={files}
+            selectedId={shownPreviewId}
+            onSelect={setPreviewId}
+            rows={quote.lines}
+            note={readNote}
+            reading={reading}
+          />
         </div>
 
         <aside className="print:hidden order-3 rounded-2xl border border-stone-200/80 bg-white/90 p-4 shadow-[0_10px_28px_-22px_rgba(19,32,28,0.45)] sm:p-5 xl:sticky xl:top-4 xl:col-start-3 xl:row-span-2 xl:row-start-1">
