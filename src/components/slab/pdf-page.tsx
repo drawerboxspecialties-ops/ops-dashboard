@@ -62,7 +62,7 @@ export function PdfPage({
     <div className="flex max-h-[min(62vh,36rem)] items-center justify-center bg-white">
       <div className="relative w-fit max-w-full">
         <canvas ref={canvasRef} className="block max-h-[min(62vh,36rem)] max-w-full bg-white" />
-        {status === "loading" ? <p className="absolute inset-x-0 top-3 text-center text-sm text-stone-500">Opening this page\u2026</p> : null}
+        {status === "loading" ? <p className="absolute inset-x-0 top-3 text-center text-sm text-stone-500">Opening this page…</p> : null}
         {status === "error" ? <p className="px-4 py-16 text-center text-sm text-stone-500">This PDF page could not be drawn.</p> : null}
         {status === "ready" ? children : null}
       </div>
