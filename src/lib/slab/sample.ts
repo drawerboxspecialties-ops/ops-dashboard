@@ -34,6 +34,7 @@ function line(
     notes: "",
     confidence: null,
     sourceFile: null,
+    reading: null,
   };
 }
 
@@ -50,5 +51,6 @@ export function blankLine(id: string, finishId: string): LineItem {
     notes: "",
     confidence: null,
     sourceFile: null,
+    reading: null,
   };
 }

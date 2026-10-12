@@ -1,5 +1,5 @@
 import { getFinish } from "@/lib/slab/catalog";
-import type { Confidence, LineItem, PieceKind, PriceBasis } from "@/lib/slab/types";
+import type { Confidence, LineItem, PieceKind, PriceBasis, SizeReading } from "@/lib/slab/types";
 
 export type StoredJob = {
   customer: string;
@@ -57,7 +57,25 @@ function parseLine(value: unknown): LineItem | null {
     notes: asText(record.notes).slice(0, 240),
     confidence: asConfidence(record.confidence),
     sourceFile: typeof record.sourceFile === "string" ? record.sourceFile.slice(0, 180) : null,
+    reading: parseReading(record.reading),
   };
+}
+
+function parseReading(value: unknown): SizeReading | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const seenAs = asText(record.seenAs).slice(0, 80);
+  const explanation = asText(record.explanation).slice(0, 240);
+  const markX = asPercent(record.markX);
+  const markY = asPercent(record.markY);
+  if (!seenAs && !explanation && markX === null && markY === null) return null;
+  const page = typeof record.page === "number" && Number.isFinite(record.page) ? Math.min(30, Math.max(1, Math.round(record.page))) : 1;
+  return { seenAs, explanation, markX, markY, page };
+}
+
+function asPercent(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 100) return null;
+  return Math.round(value * 10) / 10;
 }
 
 function asText(value: unknown): string {
