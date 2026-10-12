@@ -301,6 +301,20 @@ export function SlabEstimator() {
             rows={quote.lines}
             note={readNote}
             reading={reading}
+            onUpdate={(id, patch) =>
+              updateJob((current) => ({
+                ...current,
+                lines: current.lines.map((line) => (line.id === id ? { ...line, ...patch } : line)),
+              }))
+            }
+            onAddPiece={(fileName) => {
+              const id = crypto.randomUUID();
+              updateJob((current) => ({
+                ...current,
+                lines: [...current.lines, { ...blankLine(id, current.finishId), sourceFile: fileName }],
+              }));
+              return id;
+            }}
           />
         </div>
 
