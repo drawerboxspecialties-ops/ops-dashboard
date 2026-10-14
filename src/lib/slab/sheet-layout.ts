@@ -10,8 +10,8 @@ function clamp(value: number): number {
   return Math.min(100 - EDGE, Math.max(EDGE, value));
 }
 
-/** Push nearby size marks apart so the numbered pins do not sit on each other. */
-export function spreadPins(marks: Mark[], gap = 9): PinSpot[] {
+/** Nudge overlapping pins apart. A column of row marks stays in that column. */
+export function spreadPins(marks: Mark[], gap = 4): PinSpot[] {
   const placed: PinSpot[] = marks.map((mark) => ({
     id: mark.id,
     x: clamp(mark.x),
@@ -35,10 +35,19 @@ export function spreadPins(marks: Mark[], gap = 9): PinSpot[] {
           dist = 0.05;
         }
         const push = (gap - dist) / 2;
-        placed[i].x = clamp(placed[i].x - (dx / dist) * push);
-        placed[i].y = clamp(placed[i].y - (dy / dist) * push);
-        placed[j].x = clamp(placed[j].x + (dx / dist) * push);
-        placed[j].y = clamp(placed[j].y + (dy / dist) * push);
+        const column = Math.abs(placed[i].anchorX - placed[j].anchorX) < 5;
+        if (column) {
+          const direction = dy === 0 ? (i % 2 === 0 ? -1 : 1) : Math.sign(dy);
+          placed[i].x = clamp(placed[i].anchorX);
+          placed[j].x = clamp(placed[j].anchorX);
+          placed[i].y = clamp(placed[i].y - direction * push);
+          placed[j].y = clamp(placed[j].y + direction * push);
+        } else {
+          placed[i].x = clamp(placed[i].x - (dx / dist) * push);
+          placed[i].y = clamp(placed[i].y - (dy / dist) * push);
+          placed[j].x = clamp(placed[j].x + (dx / dist) * push);
+          placed[j].y = clamp(placed[j].y + (dy / dist) * push);
+        }
         moved = true;
       }
     }
