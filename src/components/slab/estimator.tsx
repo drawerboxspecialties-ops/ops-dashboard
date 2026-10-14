@@ -97,7 +97,6 @@ export function SlabEstimator() {
   }, []);
 
   const quote = useMemo(() => priceQuote(lines, basis), [lines, basis]);
-  const mixedFinishes = lines.some((line) => line.finishId !== finishId);
   const finish = requireFinish(finishId);
   const construction = getConstruction(finish.constructionId);
 
@@ -390,11 +389,17 @@ export function SlabEstimator() {
               />
             </div>
             <label className="block text-xs font-semibold text-stone-600">
-              Finish for new pieces
+              Finish
               <FinishSelect
-                label="Finish for new pieces"
+                label="Finish"
                 value={finishId}
-                onChange={(value) => updateJob((current) => ({ ...current, finishId: value }))}
+                onChange={(value) =>
+                  updateJob((current) => ({
+                    ...current,
+                    finishId: value,
+                    lines: current.lines.map((line) => ({ ...line, finishId: value })),
+                  }))
+                }
                 className="mt-1"
               />
             </label>
@@ -403,20 +408,6 @@ export function SlabEstimator() {
               {construction ? ` · ${construction.name}` : ""} · {formatRate(basis === "list" ? finish.listCents : finish.minimumCents)}
               {basis === "list" ? ` list, ${formatRate(finish.minimumCents)} minimum` : ` minimum, ${formatRate(finish.listCents)} list`}
             </p>
-            {mixedFinishes ? (
-              <button
-                type="button"
-                className={outlineButton}
-                onClick={() =>
-                  updateJob((current) => ({
-                    ...current,
-                    lines: current.lines.map((line) => ({ ...line, finishId: current.finishId })),
-                  }))
-                }
-              >
-                Use this finish on every line
-              </button>
-            ) : null}
             {quote.groups.length > 1 ? (
               <ul className="space-y-1 text-sm">
                 {quote.groups.map((group) => (
