@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PdfPage } from "@/components/slab/pdf-page";
 import { formatInches, parseInches, sizeWork, type PricedLine } from "@/lib/slab/pricing";
+import { openSide, spreadPins, type Side } from "@/lib/slab/sheet-layout";
 import type { Confidence, LineItem, SizeReading } from "@/lib/slab/types";
 import { cardClass, fieldClass, isPdf, type StagedFile } from "@/components/slab/sheet-ui";
 
@@ -26,6 +27,13 @@ function pieceName(row: PricedLine): string {
 function placed(mark: SizeReading | null): mark is SizeReading & { markX: number; markY: number } {
   return Boolean(mark && mark.markX !== null && mark.markY !== null);
 }
+
+const chipClass: Record<Side, string> = {
+  top: "absolute bottom-full left-1/2 z-40 mb-1 -translate-x-1/2",
+  bottom: "absolute top-full left-1/2 z-40 mt-1 -translate-x-1/2",
+  left: "absolute right-full top-1/2 z-40 mr-1 -translate-y-1/2",
+  right: "absolute left-full top-1/2 z-40 ml-1 -translate-y-1/2",
+};
 
 export function UploadPreview({
   files,
@@ -69,23 +77,9 @@ export function UploadPreview({
     choose(next.line.id);
   }
 
-  const review =
-    selected && (sheetRows.length > 0 || reading) ? (
-      <SizeReview
-        rows={sheetRows}
-        active={active}
-        activeIndex={activeIndex}
-        note={note}
-        tiedToFile={tiedToFile}
-        reading={reading}
-        page={page}
-        pageCount={pageCount}
-        onChoose={choose}
-        onStep={step}
-        onPage={(next) => setManualPage(next)}
-        onUpdate={onUpdate}
-        onRemove={onRemovePiece}
-      />
+  const pins =
+    selected && sheetRows.length > 0 ? (
+      <PinLayer rows={sheetRows} page={page} activeId={active?.line.id ?? null} onChoose={choose} />
     ) : null;
 
   return (
@@ -111,18 +105,18 @@ export function UploadPreview({
           ))}
         </div>
       ) : null}
-      <div className="mt-3 overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-200">
+      <div className="mt-3 rounded-xl bg-stone-100 ring-1 ring-stone-200">
         {selected?.preview && isPdf(selected.file) ? (
           <PdfPage file={selected.file} page={page} onPages={setPageCount}>
-            {review}
+            {pins}
           </PdfPage>
         ) : selected?.preview && selected.file.type.startsWith("image/") ? (
           <div className="flex max-h-[min(62vh,36rem)] items-center justify-center">
             <div className="relative w-fit max-w-full">
               {/* Local preview of a file the user just dropped. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={selected.preview} alt={selected.file.name} className="block max-h-[min(62vh,36rem)] max-w-full object-contain" />
-              {review}
+              <img src={selected.preview} alt={selected.file.name} className="block max-h-[min(62vh,36rem)] max-w-full rounded-xl object-contain" />
+              {pins}
             </div>
           </div>
         ) : (
@@ -131,6 +125,52 @@ export function UploadPreview({
           </p>
         )}
       </div>
+      {selected && (sheetRows.length > 1 || pageCount > 1 || reading) ? (
+        <div className="mt-3 flex flex-wrap items-center gap-1">
+          {sheetRows.length > 1 ? (
+            <button type="button" className="rounded-lg bg-stone-100 px-2 py-1 text-xs font-semibold text-stone-800" onClick={() => step(-1)}>
+              Previous
+            </button>
+          ) : null}
+          <p className="min-w-0 truncate px-1 text-xs font-semibold text-stone-900">
+            {reading && sheetRows.length === 0
+              ? "Reading sizes on this page…"
+              : active
+                ? `${activeIndex + 1} of ${sheetRows.length} · ${pieceName(active)}`
+                : "No sizes on this page"}
+            {pageCount > 1 ? ` · page ${page}/${pageCount}` : ""}
+          </p>
+          {sheetRows.length > 1 ? (
+            <button type="button" className="rounded-lg bg-stone-100 px-2 py-1 text-xs font-semibold text-stone-800" onClick={() => step(1)}>
+              Next
+            </button>
+          ) : null}
+          {pageCount > 1 ? (
+            <span className="ml-auto flex gap-1">
+              <button type="button" className="rounded-lg bg-stone-100 px-2 py-1 text-xs font-semibold text-stone-800" onClick={() => setManualPage(Math.max(1, page - 1))}>
+                Page up
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-stone-100 px-2 py-1 text-xs font-semibold text-stone-800"
+                onClick={() => setManualPage(Math.min(pageCount, page + 1))}
+              >
+                Page down
+              </button>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+      {selected && active ? (
+        <SizeEditor
+          active={active}
+          activeIndex={activeIndex}
+          note={note}
+          tiedToFile={tiedToFile}
+          onUpdate={onUpdate}
+          onRemove={onRemovePiece}
+        />
+      ) : null}
       {selected && !reading ? (
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-sm text-stone-500">
@@ -138,7 +178,7 @@ export function UploadPreview({
               ? rows.length > 0
                 ? "Older pieces are still on the quote. Reset removes them."
                 : "Read the drawing, or type a size on it."
-              : "Change a size on the sheet. The quote follows."}
+              : "Pins sit beside the written size. The quote is under the sheet."}
           </p>
           <button
             type="button"
@@ -153,123 +193,136 @@ export function UploadPreview({
   );
 }
 
-function SizeReview({
+function PinLayer({
   rows,
-  active,
-  activeIndex,
-  note,
-  tiedToFile,
-  reading,
   page,
-  pageCount,
+  activeId,
   onChoose,
-  onStep,
-  onPage,
-  onUpdate,
-  onRemove,
 }: {
   rows: PricedLine[];
-  active: PricedLine | null;
-  activeIndex: number;
-  note: string;
-  tiedToFile: boolean;
-  reading: boolean;
   page: number;
-  pageCount: number;
+  activeId: string | null;
   onChoose: (id: string) => void;
-  onStep: (delta: number) => void;
-  onPage: (page: number) => void;
-  onUpdate: (id: string, patch: Partial<LineItem>) => void;
-  onRemove: (id: string) => void;
 }) {
-  const mark = active?.line.reading ?? null;
-  const work = active ? sizeWork(active.line.widthIn, active.line.heightIn, active.line.quantity) : null;
+  const marked = rows.flatMap((row, index) => {
+    const mark = row.line.reading;
+    if (!placed(mark) || mark.page !== page) return [];
+    return [{ id: row.line.id, x: mark.markX, y: mark.markY, n: index + 1, row }];
+  });
+  const spots = spreadPins(marked);
+  const byId = new Map(marked.map((item) => [item.id, item]));
 
   return (
     <>
-      {rows.map((row, index) => {
-        const pin = row.line.reading;
-        if (!placed(pin) || pin.page !== page) return null;
-        const on = row.line.id === active?.line.id;
+      <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full text-stone-800/70" aria-hidden="true">
+        {spots.map((spot) => {
+          const moved = Math.hypot(spot.x - spot.anchorX, spot.y - spot.anchorY) > 1.5;
+          if (!moved) return null;
+          return (
+            <line
+              key={spot.id}
+              x1={`${spot.anchorX}%`}
+              y1={`${spot.anchorY}%`}
+              x2={`${spot.x}%`}
+              y2={`${spot.y}%`}
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+          );
+        })}
+      </svg>
+      {spots.map((spot) => {
+        const moved = Math.hypot(spot.x - spot.anchorX, spot.y - spot.anchorY) > 1.5;
+        if (!moved) return null;
+        return (
+          <span
+            key={`${spot.id}-anchor`}
+            className="absolute z-20 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-stone-800 ring-2 ring-white"
+            style={{ left: `${spot.anchorX}%`, top: `${spot.anchorY}%` }}
+          />
+        );
+      })}
+      {spots.map((spot) => {
+        const item = byId.get(spot.id);
+        if (!item) return null;
+        const on = spot.id === activeId;
+        const others = spots.filter((other) => other.id !== spot.id);
+        const side = openSide(spot.x, spot.y, others);
+        const label = `${formatInches(item.row.line.widthIn)} × ${formatInches(item.row.line.heightIn)}`;
         return (
           <button
-            key={row.line.id}
+            key={spot.id}
             type="button"
             aria-pressed={on}
-            aria-label={`${pieceName(row)} on the page`}
-            onClick={() => onChoose(row.line.id)}
-            style={{ left: `${pin.markX}%`, top: `${pin.markY}%` }}
+            aria-label={`${pieceName(item.row)} on the page`}
+            onClick={() => onChoose(spot.id)}
+            style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
             className={`absolute z-30 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-semibold ring-2 ring-white ${
               on ? "bg-teal-800 text-white" : "bg-stone-800 text-white"
             }`}
           >
-            {index + 1}
+            {item.n}
+            {on ? (
+              <span className={`${chipClass[side]} whitespace-nowrap rounded-md bg-white px-1.5 py-0.5 text-[11px] font-semibold text-stone-900 shadow ring-1 ring-stone-300`}>
+                {label}
+              </span>
+            ) : null}
           </button>
         );
       })}
-      <div className="absolute inset-x-2 top-2 z-20 flex items-center gap-1">
-        {rows.length > 1 ? (
-          <button type="button" className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-800 shadow ring-1 ring-stone-200" onClick={() => onStep(-1)}>
-            Previous
-          </button>
-        ) : null}
-        <p className="min-w-0 truncate rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-900 shadow ring-1 ring-stone-200">
-          {reading && rows.length === 0 ? "Reading sizes on this page…" : active ? `${activeIndex + 1} of ${rows.length} · ${pieceName(active)}` : "No sizes on this page"}
-          {pageCount > 1 ? ` · page ${page}/${pageCount}` : ""}
-        </p>
-        {rows.length > 1 ? (
-          <button type="button" className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-800 shadow ring-1 ring-stone-200" onClick={() => onStep(1)}>
-            Next
-          </button>
-        ) : null}
-        {pageCount > 1 ? (
-          <span className="ml-auto flex gap-1">
-            <button type="button" className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-800 shadow ring-1 ring-stone-200" onClick={() => onPage(Math.max(1, page - 1))}>
-              Page up
-            </button>
-            <button type="button" className="rounded-lg bg-white/95 px-2 py-1 text-xs font-semibold text-stone-800 shadow ring-1 ring-stone-200" onClick={() => onPage(Math.min(pageCount, page + 1))}>
-              Page down
-            </button>
-          </span>
-        ) : null}
-      </div>
-      {active && work ? (
-        <div className="absolute inset-x-2 bottom-2 z-20 rounded-xl bg-white/95 p-2.5 text-left shadow-lg ring-1 ring-stone-300">
-          <p className="text-xs font-semibold text-stone-500">
-            {confidenceLabel(active.line.confidence) || "On the quote"}
-            {placed(mark) ? "" : " · not marked on the page yet"}
-          </p>
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold text-stone-900">
-              {activeIndex + 1}. {pieceName(active)}
-            </p>
-            <button
-              type="button"
-              className="shrink-0 text-xs font-semibold text-stone-500 underline"
-              onClick={() => onRemove(active.line.id)}
-            >
-              Remove
-            </button>
-          </div>
-          {mark?.seenAs ? <p className="mt-1 text-xs text-stone-500">Copied “{mark.seenAs}”</p> : null}
-          <div className="mt-2 grid grid-cols-4 gap-1.5">
-            <LiveInch label="Width" value={active.line.widthIn} onCommit={(widthIn) => onUpdate(active.line.id, { widthIn })} />
-            <LiveInch label="Height" value={active.line.heightIn} onCommit={(heightIn) => onUpdate(active.line.id, { heightIn })} />
-            <LiveCount label="Qty" value={active.line.quantity} fallback={1} onCommit={(quantity) => onUpdate(active.line.id, { quantity })} />
-            <LiveCount label="Hinges" value={active.line.hingeHolesEach} fallback={0} onCommit={(hingeHolesEach) => onUpdate(active.line.id, { hingeHolesEach })} />
-          </div>
-          <p className="mt-1.5 text-sm font-medium tabular-nums text-stone-900">{work.formula}</p>
-          {mark?.explanation ? <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-stone-500">{mark.explanation}</p> : null}
-          {!placed(mark) || !tiedToFile || note ? (
-            <p className="mt-1 text-[11px] leading-snug text-stone-500">
-              {placed(mark) ? "" : "This size is not marked on the page yet. "}
-              {!tiedToFile ? "These pieces are on the quote. " : ""}
-              {note}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
     </>
+  );
+}
+
+function SizeEditor({
+  active,
+  activeIndex,
+  note,
+  tiedToFile,
+  onUpdate,
+  onRemove,
+}: {
+  active: PricedLine;
+  activeIndex: number;
+  note: string;
+  tiedToFile: boolean;
+  onUpdate: (id: string, patch: Partial<LineItem>) => void;
+  onRemove: (id: string) => void;
+}) {
+  const mark = active.line.reading;
+  const work = sizeWork(active.line.widthIn, active.line.heightIn, active.line.quantity);
+
+  return (
+    <div className="mt-3 rounded-xl bg-stone-50 p-3 ring-1 ring-stone-200">
+      <p className="text-xs font-semibold text-stone-500">
+        {confidenceLabel(active.line.confidence) || "On the quote"}
+        {placed(mark) ? "" : " · not marked on the page yet"}
+      </p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold text-stone-900">
+          {activeIndex + 1}. {pieceName(active)}
+        </p>
+        <button type="button" className="shrink-0 text-xs font-semibold text-stone-500 underline" onClick={() => onRemove(active.line.id)}>
+          Remove
+        </button>
+      </div>
+      {mark?.seenAs ? <p className="mt-1 text-xs text-stone-500">Copied “{mark.seenAs}”</p> : null}
+      <div className="mt-2 grid grid-cols-4 gap-1.5">
+        <LiveInch label="Width" value={active.line.widthIn} onCommit={(widthIn) => onUpdate(active.line.id, { widthIn })} />
+        <LiveInch label="Height" value={active.line.heightIn} onCommit={(heightIn) => onUpdate(active.line.id, { heightIn })} />
+        <LiveCount label="Qty" value={active.line.quantity} fallback={1} onCommit={(quantity) => onUpdate(active.line.id, { quantity })} />
+        <LiveCount label="Hinges" value={active.line.hingeHolesEach} fallback={0} onCommit={(hingeHolesEach) => onUpdate(active.line.id, { hingeHolesEach })} />
+      </div>
+      <p className="mt-1.5 text-sm font-medium tabular-nums text-stone-900">{work.formula}</p>
+      {mark?.explanation ? <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-stone-500">{mark.explanation}</p> : null}
+      {!placed(mark) || !tiedToFile || note ? (
+        <p className="mt-1 text-[11px] leading-snug text-stone-500">
+          {placed(mark) ? "" : "This size is not marked on the page yet. "}
+          {!tiedToFile ? "These pieces are on the quote. " : ""}
+          {note}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
