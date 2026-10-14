@@ -47,9 +47,8 @@ export function UploadPreview({
   onAddPiece: (fileName: string) => string;
 }) {
   const selected = files.find((item) => item.id === selectedId) ?? null;
-  const fromFile = selected ? rows.filter((row) => sameFile(row.line.sourceFile, selected.file.name)) : [];
-  const sheetRows = fromFile.length > 0 ? fromFile : selected ? rows.filter((row) => row.line.widthIn > 0 && row.line.heightIn > 0) : [];
-  const tiedToFile = fromFile.length > 0;
+  const sheetRows = selected ? rows.filter((row) => sameFile(row.line.sourceFile, selected.file.name)) : [];
+  const tiedToFile = sheetRows.length > 0;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState(1);
   const [manualPage, setManualPage] = useState<number | null>(null);
@@ -132,7 +131,11 @@ export function UploadPreview({
       {selected && !reading ? (
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-sm text-stone-500">
-            {sheetRows.length === 0 ? "Read the drawing, or type a size on it." : "Change a size on the sheet. The quote follows."}
+            {sheetRows.length === 0
+              ? rows.length > 0
+                ? "Older pieces are still on the quote. Clear quote removes them."
+                : "Read the drawing, or type a size on it."
+              : "Change a size on the sheet. The quote follows."}
           </p>
           <button
             type="button"
