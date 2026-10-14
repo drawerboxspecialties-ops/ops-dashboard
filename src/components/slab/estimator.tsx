@@ -10,7 +10,6 @@ import type { Confidence, LineItem, PieceKind } from "@/lib/slab/types";
 import {
   BasisButton,
   FinishSelect,
-  LineSheet,
   PriceBook,
   PrintQuote,
   SummaryRow,
@@ -18,7 +17,6 @@ import {
   UploadPreview,
   UploadTray,
   fieldClass,
-  ghostButton,
   isAccepted,
   outlineButton,
   previewable,
@@ -236,7 +234,7 @@ export function SlabEstimator() {
       finishId: DEFAULT_FINISH_ID,
       lines: [],
     }));
-    setNotice({ tone: "ok", text: "Quote cleared." });
+    setNotice({ tone: "ok", text: "Quote reset." });
   }
 
   async function copyQuote() {
@@ -256,7 +254,12 @@ export function SlabEstimator() {
           <a href="/" className="text-[11px] font-semibold tracking-[0.18em] text-teal-800 uppercase">
             Operations Hub
           </a>
-          <p className="text-sm text-stone-500">Effective {PRICE_LIST.effective}</p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-stone-500">Effective {PRICE_LIST.effective}</p>
+            <button type="button" className={outlineButton} onClick={clearQuote}>
+              Reset
+            </button>
+          </div>
         </div>
         <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">Slab Measure</h1>
         <p className="mt-2 max-w-2xl text-sm text-stone-600 sm:text-base">
@@ -303,33 +306,8 @@ export function SlabEstimator() {
             </p>
           ) : null}
         </div>
-        <div className="print:hidden order-4 flex flex-col gap-6 xl:col-start-1">
-          <div>
-            <LineSheet
-              rows={quote.lines}
-              onAdd={() =>
-                updateJob((current) => ({
-                  ...current,
-                  lines: [...current.lines, blankLine(crypto.randomUUID(), current.finishId)],
-                }))
-              }
-              onUpdate={(id, patch) =>
-                updateJob((current) => ({
-                  ...current,
-                  lines: current.lines.map((line) => (line.id === id ? applyLinePatch(line, patch) : line)),
-                }))
-              }
-              onRemove={(id) =>
-                updateJob((current) => ({
-                  ...current,
-                  lines: current.lines.filter((line) => line.id !== id),
-                }))
-              }
-            />
-          </div>
-          <div>
-            <PriceBook />
-          </div>
+        <div className="print:hidden order-4 xl:col-start-1">
+          <PriceBook />
         </div>
 
         <div className="print:hidden order-2 xl:sticky xl:top-4 xl:col-start-2 xl:row-span-2 xl:row-start-1">
@@ -354,6 +332,12 @@ export function SlabEstimator() {
               }));
               return id;
             }}
+            onRemovePiece={(id) =>
+              updateJob((current) => ({
+                ...current,
+                lines: current.lines.filter((line) => line.id !== id),
+              }))
+            }
           />
         </div>
 
@@ -465,8 +449,8 @@ export function SlabEstimator() {
             <button type="button" className={outlineButton} onClick={() => window.print()}>
               Print
             </button>
-            <button type="button" className={ghostButton} onClick={clearQuote}>
-              Clear quote
+            <button type="button" className={outlineButton} onClick={clearQuote}>
+              Reset
             </button>
           </div>
           <p className="mt-4 text-xs leading-5 text-stone-500">
