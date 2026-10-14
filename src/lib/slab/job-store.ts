@@ -1,5 +1,5 @@
 import { DEFAULT_FINISH_ID } from "@/lib/slab/catalog";
-import { parseStoredJob, type StoredJob } from "@/lib/slab/storage";
+import type { StoredJob } from "@/lib/slab/storage";
 
 export const STORAGE_KEY = "slab-measure.v1";
 
@@ -13,8 +13,19 @@ export const EMPTY_JOB: StoredJob = {
 };
 
 let snapshot: StoredJob = EMPTY_JOB;
-let started = false;
 const listeners = new Set<() => void>();
+
+function discardSavedJob() {
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Storage can be blocked. The quote still starts empty.
+  }
+}
+
+if (typeof window !== "undefined") {
+  discardSavedJob();
+}
 
 export function subscribeJob(listener: () => void) {
   listeners.add(listener);
@@ -22,15 +33,6 @@ export function subscribeJob(listener: () => void) {
 }
 
 export function getJobSnapshot(): StoredJob {
-  if (typeof window === "undefined") return EMPTY_JOB;
-  if (!started) {
-    started = true;
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = parseStoredJob(raw);
-      if (parsed) snapshot = parsed;
-    }
-  }
   return snapshot;
 }
 
@@ -40,8 +42,7 @@ export function getServerJob(): StoredJob {
 
 export function updateJob(recipe: (current: StoredJob) => StoredJob) {
   if (typeof window === "undefined") return;
-  const next = recipe(getJobSnapshot());
-  snapshot = next;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  snapshot = recipe(snapshot);
+  discardSavedJob();
   for (const listener of listeners) listener();
 }
