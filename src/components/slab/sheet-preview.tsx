@@ -36,6 +36,7 @@ export function UploadPreview({
   reading,
   onUpdate,
   onAddPiece,
+  onRemovePiece,
 }: {
   files: StagedFile[];
   selectedId: string | null;
@@ -45,6 +46,7 @@ export function UploadPreview({
   reading: boolean;
   onUpdate: (id: string, patch: Partial<LineItem>) => void;
   onAddPiece: (fileName: string) => string;
+  onRemovePiece: (id: string) => void;
 }) {
   const selected = files.find((item) => item.id === selectedId) ?? null;
   const sheetRows = selected ? rows.filter((row) => sameFile(row.line.sourceFile, selected.file.name)) : [];
@@ -82,6 +84,7 @@ export function UploadPreview({
         onStep={step}
         onPage={(next) => setManualPage(next)}
         onUpdate={onUpdate}
+        onRemove={onRemovePiece}
       />
     ) : null;
 
@@ -133,7 +136,7 @@ export function UploadPreview({
           <p className="text-sm text-stone-500">
             {sheetRows.length === 0
               ? rows.length > 0
-                ? "Older pieces are still on the quote. Clear quote removes them."
+                ? "Older pieces are still on the quote. Reset removes them."
                 : "Read the drawing, or type a size on it."
               : "Change a size on the sheet. The quote follows."}
           </p>
@@ -163,6 +166,7 @@ function SizeReview({
   onStep,
   onPage,
   onUpdate,
+  onRemove,
 }: {
   rows: PricedLine[];
   active: PricedLine | null;
@@ -176,6 +180,7 @@ function SizeReview({
   onStep: (delta: number) => void;
   onPage: (page: number) => void;
   onUpdate: (id: string, patch: Partial<LineItem>) => void;
+  onRemove: (id: string) => void;
 }) {
   const mark = active?.line.reading ?? null;
   const work = active ? sizeWork(active.line.widthIn, active.line.heightIn, active.line.quantity) : null;
@@ -234,9 +239,18 @@ function SizeReview({
             {confidenceLabel(active.line.confidence) || "On the quote"}
             {placed(mark) ? "" : " · not marked on the page yet"}
           </p>
-          <p className="text-sm font-semibold text-stone-900">
-            {activeIndex + 1}. {pieceName(active)}
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-semibold text-stone-900">
+              {activeIndex + 1}. {pieceName(active)}
+            </p>
+            <button
+              type="button"
+              className="shrink-0 text-xs font-semibold text-stone-500 underline"
+              onClick={() => onRemove(active.line.id)}
+            >
+              Remove
+            </button>
+          </div>
           {mark?.seenAs ? <p className="mt-1 text-xs text-stone-500">Copied “{mark.seenAs}”</p> : null}
           <div className="mt-2 grid grid-cols-4 gap-1.5">
             <LiveInch label="Width" value={active.line.widthIn} onCommit={(widthIn) => onUpdate(active.line.id, { widthIn })} />
