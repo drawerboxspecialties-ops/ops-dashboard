@@ -55,7 +55,7 @@ export function UploadTray({
         <div>
           <h2 className="font-display text-xl font-bold text-stone-900">Read a schedule</h2>
           <p className="mt-1 max-w-xl text-sm text-stone-500">
-            Drop a cut list, sketch, or shop drawing. Photos and PDFs are fine. The reader pulls finished width, height, quantity, and any hinge holes it can see.
+            Drop a cut list, sketch, or shop drawing. Photos and PDFs are fine. The reader pulls the customer, the PO or job name, and each finished size it can see.
           </p>
         </div>
         <p className="text-xs text-stone-500">
