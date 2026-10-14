@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { pdfTextToWords, type PageWord } from "@/lib/slab/locate-sizes";
 
 const PDFJS_URL = "https://unpkg.com/pdfjs-dist@6.4.299/build/pdf.min.mjs";
 const PDFJS_WORKER_URL = "https://unpkg.com/pdfjs-dist@6.4.299/build/pdf.worker.min.mjs";
 
 type PdfViewport = { width: number; height: number };
 type PdfRenderTask = { promise: Promise<void>; cancel: () => void };
+type PdfTextItem = { str?: string; transform?: number[]; width?: number };
 type PdfPageProxy = {
-  getViewport: (params: { scale: number }) => PdfViewport;
+  getViewport: (params: { scale: number }) => PdfViewport & { transform: number[] };
+  getTextContent: () => Promise<{ items: PdfTextItem[] }>;
   render: (params: { canvasContext: CanvasRenderingContext2D; canvas: HTMLCanvasElement; viewport: PdfViewport }) => PdfRenderTask;
 };
 type PdfDocument = {
@@ -19,23 +22,28 @@ type PdfLoadingTask = { promise: Promise<PdfDocument>; destroy: () => Promise<vo
 type Pdfjs = {
   GlobalWorkerOptions: { workerSrc: string };
   getDocument: (src: { data: Uint8Array }) => PdfLoadingTask;
+  Util: { transform: (matrix: number[], item: number[]) => number[] };
 };
 
 export function PdfPage({
   file,
   page,
   onPages,
+  onWords,
   children,
 }: {
   file: File;
   page: number;
   onPages: (count: number) => void;
+  onWords?: (words: PageWord[]) => void;
   children?: ReactNode;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const onPagesRef = useRef(onPages);
+  const onWordsRef = useRef(onWords);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   onPagesRef.current = onPages;
+  onWordsRef.current = onWords;
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +63,8 @@ export function PdfPage({
         const pageNumber = Math.min(Math.max(1, page), doc.numPages);
         const pdfPage = await doc.getPage(pageNumber);
         const base = pdfPage.getViewport({ scale: 1 });
+        const text = await pdfPage.getTextContent();
+        if (!cancelled) onWordsRef.current?.(pdfTextToWords(text.items, base, pdfjs.Util.transform));
         const viewport = pdfPage.getViewport({ scale: Math.min(2, 1200 / base.width) });
         const canvas = canvasRef.current;
         const context = canvas?.getContext("2d");
@@ -65,7 +75,10 @@ export function PdfPage({
         await renderTask.promise;
         if (!cancelled) setStatus("ready");
       } catch {
-        if (!cancelled) setStatus("error");
+        if (!cancelled) {
+          onWordsRef.current?.([]);
+          setStatus("error");
+        }
       } finally {
         await loadingTask?.destroy();
       }
