@@ -59,7 +59,7 @@ export function UploadTray({
           </p>
         </div>
         <p className="text-xs text-stone-500">
-          {configured === null ? "Checking the reader…" : configured ? "Reader is ready" : "Hand entry works without a key"}
+          {configured === null ? "Checking the reader\u2026" : configured ? "Reader is ready" : "Hand entry works without a key"}
         </p>
       </div>
 
@@ -139,12 +139,12 @@ export function UploadTray({
       ) : null}
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" className={primaryButton} disabled={files.length === 0 || reading} onClick={() => onRead(hasLines ? "append" : "replace")}>
-          {reading ? "Reading…" : hasLines ? "Add what it finds" : "Read drawings"}
+        <button type="button" className={primaryButton} disabled={files.length === 0 || reading} onClick={() => onRead("replace")}>
+          {reading ? "Reading\u2026" : hasLines ? "Replace current lines" : "Read drawings"}
         </button>
         {hasLines && files.length > 0 ? (
-          <button type="button" className={outlineButton} disabled={reading} onClick={() => onRead("replace")}>
-            Replace current lines
+          <button type="button" className={outlineButton} disabled={reading} onClick={() => onRead("append")}>
+            Add to the quote
           </button>
         ) : null}
         <button type="button" className={ghostButton} onClick={onLoadSampleSizes}>
