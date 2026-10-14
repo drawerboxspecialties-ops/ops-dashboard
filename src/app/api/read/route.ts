@@ -7,7 +7,7 @@ import { cleanSheetName } from "@/lib/slab/sheet-identity";
 
 export const maxDuration = 60;
 
-const DEFAULT_MODEL = "google/gemini-3.8-flash";
+const DEFAULT_MODEL = "google/gemini-4-argon";
 
 const MAX_FILES = 6;
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
     const result = await generateText({
       model: selectedModel(),
       temperature: 0,
-      reasoning: "low",
+      reasoning: "medium",
       maxOutputTokens: 8000,
       timeout: { totalMs: 55_000 },
       output: Output.object({
@@ -211,6 +211,8 @@ export async function POST(request: Request) {
 
 function instructions(): string {
   return `You measure cabinet slab doors and drawer fronts for a shop quote.
+
+The sheet may be a printed schedule, a checkbox order form, an assembly drawing, or a hand sketch. Read every row that has a finished size, including a checked box with sizes filled in and a sketch with the size written beside that piece.
 
 Return one piece per schedule row. Keep the printed quantity on that row. Do not explode a quantity into duplicate pieces.
 
