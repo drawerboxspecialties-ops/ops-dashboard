@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { z } from "zod";
 import { catalogForPrompt, getFinish } from "@/lib/slab/catalog";
 import { matchFinish } from "@/lib/slab/match-finish";
+import { cleanSheetName } from "@/lib/slab/sheet-identity";
 
 export const maxDuration = 60;
 
@@ -13,6 +14,8 @@ const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 40 * 1024 * 1024;
 
 const extractionSchema = z.object({
+  customer: z.string(),
+  jobName: z.string(),
   documentNotes: z.string(),
   unitsDetected: z.enum(["in", "mm", "mixed", "unknown"]),
   pieces: z.array(
@@ -194,6 +197,8 @@ export async function POST(request: Request) {
 
     return Response.json({
       model: selectedModel(),
+      customer: cleanSheetName(result.output.customer),
+      jobName: cleanSheetName(result.output.jobName),
       documentNotes: result.output.documentNotes.trim().slice(0, 500),
       unitsDetected: result.output.unitsDetected,
       pieces,
@@ -228,7 +233,9 @@ sourceFile is the filename of the attachment the piece came from.
 seenAs is the exact size text copied from that row, such as "14 1/2 x 30, qty 2, 2 each". Keep the sheet's words. Use an empty string only when no size text is visible.
 explanation is one sentence of how you understood that row: which number is the width, which is the height, how a fraction or a millimeter became decimal inches, and where the hinge count came from. Do not calculate square feet.
 markX and markY are the center of the written size itself, the dimension text, as a percentage of that page. 0 is the left or top edge and 100 is the right or bottom edge. Place every size you can see. page is the 1-based page number in that file. If you cannot place the row, use -1 for markX and markY and 1 for page.
-documentNotes covers the job, room, or a finish that applies to the whole sheet. Say whether the sizes are printed or handwritten, and name the unit.
+customer is the customer, client, homeowner, or sold-to name printed or handwritten on the sheet. Copy it as written. Use the filename only when the sheet itself has no customer. Use an empty string when none is shown. Do not guess a customer from a door label.
+jobName is the purchase order, PO number, or job name on the sheet. Look for PO, P.O., PO#, Purchase Order, Job, Job #, and Job name. If both a PO number and a job or room name are written, join them as "PO 4412 — Kitchen". If only one is written, return that one. Use the filename only when the sheet itself has no PO or job name. Use an empty string when none is shown.
+documentNotes says whether the sizes are printed or handwritten, names the unit, and notes a finish that applies to the whole sheet. Do not repeat the customer or the PO here.
 unitsDetected is "in", "mm", "mixed", or "unknown".
 
 Skip fillers, toe kicks, face frames, finished ends, and panels that are not doors or drawer fronts.

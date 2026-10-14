@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { DEFAULT_FINISH_ID, HINGE_HOLE_CENTS, PRICE_LIST, getConstruction, requireFinish } from "@/lib/slab/catalog";
 import { getJobSnapshot, getServerJob, subscribeJob, updateJob } from "@/lib/slab/job-store";
+import { applySheetIdentity, identityNotice } from "@/lib/slab/sheet-identity";
 import { formatMoney, formatRate, formatSquareFeet, priceQuote } from "@/lib/slab/pricing";
 import { quotePlainText } from "@/lib/slab/quote-text";
 import { blankLine, haleSampleLines } from "@/lib/slab/sample";
@@ -173,6 +174,8 @@ export function SlabEstimator() {
       const payload = (await response.json()) as {
         error?: string;
         message?: string;
+        customer?: string;
+        jobName?: string;
         documentNotes?: string;
         pieces?: ExtractedPiece[];
       };
@@ -180,16 +183,25 @@ export function SlabEstimator() {
         setNotice({ tone: "err", text: payload.message || "The drawing could not be read." });
         return;
       }
+      const found = { customer: payload.customer ?? "", jobName: payload.jobName ?? "" };
+      const named = applySheetIdentity(getJobSnapshot(), found, mode);
+      const namedNote = identityNotice(named.filledCustomer, named.filledJob);
       const pieces = payload.pieces ?? [];
       if (pieces.length === 0) {
+        updateJob((current) => ({ ...current, customer: named.customer, jobName: named.jobName }));
         setReadNote(payload.documentNotes || "No doors or drawer fronts were found on that file.");
-        setNotice({ tone: "err", text: "No doors or drawer fronts were found." });
+        setNotice({
+          tone: "err",
+          text: namedNote ? `No doors or drawer fronts were found. ${namedNote}` : "No doors or drawer fronts were found.",
+        });
         return;
       }
       const created = pieces.map((piece) => toLine(piece, finishId));
       const matched = new Set(created.map((line) => line.finishId));
       updateJob((current) => ({
         ...current,
+        customer: named.customer,
+        jobName: named.jobName,
         lines: mode === "replace" ? created : [...current.lines, ...created],
         finishId:
           (mode === "replace" || current.lines.length === 0) && matched.size === 1
@@ -198,17 +210,14 @@ export function SlabEstimator() {
       }));
       const note = payload.documentNotes?.trim();
       setReadNote(
-        note
-          ? note
-          : `Read ${created.length} ${created.length === 1 ? "piece" : "pieces"}. Check anything marked low before you send the quote.`,
+        [note, namedNote].filter(Boolean).join(" ") ||
+          `Read ${created.length} ${created.length === 1 ? "piece" : "pieces"}. Check anything marked low before you send the quote.`,
       );
-      setNotice({
-        tone: "ok",
-        text:
-          mode === "replace"
-            ? `Replaced the quote with ${created.length} ${created.length === 1 ? "piece" : "pieces"}.`
-            : `Added ${created.length} ${created.length === 1 ? "piece" : "pieces"}.`,
-      });
+      const countNote =
+        mode === "replace"
+          ? `Replaced the quote with ${created.length} ${created.length === 1 ? "piece" : "pieces"}.`
+          : `Added ${created.length} ${created.length === 1 ? "piece" : "pieces"}.`;
+      setNotice({ tone: "ok", text: namedNote ? `${countNote} ${namedNote}` : countNote });
     } catch {
       setNotice({ tone: "err", text: "The reader did not respond. Check the connection and try again." });
     } finally {
@@ -382,9 +391,9 @@ export function SlabEstimator() {
                 onChange={(value) => updateJob((current) => ({ ...current, customer: value }))}
               />
               <TextField
-                label="Job"
+                label="PO / Job"
                 value={jobName}
-                placeholder="Kitchen"
+                placeholder="PO 4412"
                 onChange={(value) => updateJob((current) => ({ ...current, jobName: value }))}
               />
             </div>
