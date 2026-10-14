@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PdfPage } from "@/components/slab/pdf-page";
+import { locateSizes, marksAreBunched, type PageWord, type SizeHit } from "@/lib/slab/locate-sizes";
 import { formatInches, parseInches, sizeWork, type PricedLine } from "@/lib/slab/pricing";
+import { readImageWords } from "@/lib/slab/read-image-words";
 import { openSide, spreadPins, type Side } from "@/lib/slab/sheet-layout";
 import type { Confidence, LineItem, SizeReading } from "@/lib/slab/types";
 import { cardClass, fieldClass, isPdf, type StagedFile } from "@/components/slab/sheet-ui";
@@ -62,9 +64,50 @@ export function UploadPreview({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState(1);
   const [manualPage, setManualPage] = useState<number | null>(null);
+  const [pageWords, setPageWords] = useState<PageWord[]>([]);
+  const [textReady, setTextReady] = useState(false);
   const active = sheetRows.find((row) => row.line.id === activeId) ?? sheetRows[0] ?? null;
   const activeIndex = active ? Math.max(0, sheetRows.findIndex((row) => row.line.id === active.line.id)) : 0;
   const page = manualPage ?? active?.line.reading?.page ?? 1;
+  const pageRows = sheetRows.filter((row) => (row.line.reading?.page ?? 1) === page);
+  const hits = locateSizes(
+    pageWords,
+    pageRows.map((row) => ({
+      id: row.line.id,
+      widthIn: row.line.widthIn,
+      heightIn: row.line.heightIn,
+      quantity: row.line.quantity,
+    })),
+  );
+  const modelPoints = pageRows.flatMap((row) => {
+    const mark = row.line.reading;
+    if (!placed(mark) || mark.page !== page) return [];
+    return [{ x: mark.markX, y: mark.markY }];
+  });
+  const bunched = marksAreBunched(modelPoints);
+
+  useEffect(() => {
+    setPageWords([]);
+    setTextReady(false);
+  }, [selected?.id, page]);
+
+  useEffect(() => {
+    if (!selected || isPdf(selected.file)) return;
+    let cancelled = false;
+    readImageWords(selected.file)
+      .then((words) => {
+        if (!cancelled) setPageWords(words);
+      })
+      .catch(() => {
+        if (!cancelled) setPageWords([]);
+      })
+      .finally(() => {
+        if (!cancelled) setTextReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected, page]);
 
   function choose(id: string) {
     setManualPage(null);
@@ -79,7 +122,14 @@ export function UploadPreview({
 
   const pins =
     selected && sheetRows.length > 0 ? (
-      <PinLayer rows={sheetRows} page={page} activeId={active?.line.id ?? null} onChoose={choose} />
+      <PinLayer
+        rows={sheetRows}
+        page={page}
+        hits={hits}
+        showGuesses={!bunched}
+        activeId={active?.line.id ?? null}
+        onChoose={choose}
+      />
     ) : null;
 
   return (
@@ -107,7 +157,15 @@ export function UploadPreview({
       ) : null}
       <div className="mt-3 rounded-xl bg-stone-100 ring-1 ring-stone-200">
         {selected?.preview && isPdf(selected.file) ? (
-          <PdfPage file={selected.file} page={page} onPages={setPageCount}>
+          <PdfPage
+            file={selected.file}
+            page={page}
+            onPages={setPageCount}
+            onWords={(words) => {
+              setPageWords(words);
+              setTextReady(true);
+            }}
+          >
             {pins}
           </PdfPage>
         ) : selected?.preview && selected.file.type.startsWith("image/") ? (
@@ -116,7 +174,7 @@ export function UploadPreview({
               {/* Local preview of a file the user just dropped. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={selected.preview} alt={selected.file.name} className="block max-h-[min(62vh,36rem)] max-w-full rounded-xl object-contain" />
-              {pins}
+              <div className="absolute inset-0">{pins}</div>
             </div>
           </div>
         ) : (
@@ -178,7 +236,13 @@ export function UploadPreview({
               ? rows.length > 0
                 ? "Older pieces are still on the quote. Reset removes them."
                 : "Read the drawing, or type a size on it."
-              : "Pins sit beside the written size. The quote is under the sheet."}
+              : !textReady
+                ? "Lining the marks up with the printed sizes…"
+                : hits.length > 0
+                  ? "Highlights sit on the printed width and height."
+                  : bunched
+                    ? "The sizes on this page could not be lined up. Check each row below."
+                    : "Pins sit beside the written size. The quote is under the sheet."}
           </p>
           <button
             type="button"
@@ -196,24 +260,53 @@ export function UploadPreview({
 function PinLayer({
   rows,
   page,
+  hits,
+  showGuesses,
   activeId,
   onChoose,
 }: {
   rows: PricedLine[];
   page: number;
+  hits: SizeHit[];
+  showGuesses: boolean;
   activeId: string | null;
   onChoose: (id: string) => void;
 }) {
-  const marked = rows.flatMap((row, index) => {
-    const mark = row.line.reading;
-    if (!placed(mark) || mark.page !== page) return [];
-    return [{ id: row.line.id, x: mark.markX, y: mark.markY, n: index + 1, row }];
-  });
-  const spots = spreadPins(marked);
-  const byId = new Map(marked.map((item) => [item.id, item]));
+  const hitById = new Map(hits.map((hit) => [hit.id, hit]));
+  const guessed = showGuesses
+    ? rows.flatMap((row, index) => {
+        if (hitById.has(row.line.id)) return [];
+        const mark = row.line.reading;
+        if (!placed(mark) || mark.page !== page) return [];
+        return [{ id: row.line.id, x: mark.markX, y: mark.markY, n: index + 1, row }];
+      })
+    : [];
+  const spots = spreadPins(guessed);
+  const guessById = new Map(guessed.map((item) => [item.id, item]));
 
   return (
     <>
+      {hits.map((hit) => {
+        const row = rows.find((item) => item.line.id === hit.id);
+        if (!row) return null;
+        const on = hit.id === activeId;
+        const n = rows.findIndex((item) => item.line.id === hit.id) + 1;
+        return (
+          <button
+            key={`${hit.id}-box`}
+            type="button"
+            aria-pressed={on}
+            aria-label={`${pieceName(row)} on the page`}
+            onClick={() => onChoose(hit.id)}
+            style={{ left: `${hit.left}%`, top: `${hit.top}%`, width: `${hit.width}%`, height: `${hit.height}%` }}
+            className={`absolute z-20 rounded-[3px] ${on ? "bg-teal-700/30 ring-2 ring-teal-800" : "bg-teal-700/15 ring-1 ring-teal-800/70"}`}
+          >
+            <span className="sr-only">
+              {n}. {formatInches(row.line.widthIn)} × {formatInches(row.line.heightIn)}
+            </span>
+          </button>
+        );
+      })}
       <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full text-stone-800/70" aria-hidden="true">
         {spots.map((spot) => {
           const moved = Math.hypot(spot.x - spot.anchorX, spot.y - spot.anchorY) > 1.5;
@@ -242,8 +335,37 @@ function PinLayer({
           />
         );
       })}
+      {hits.map((hit) => {
+        const row = rows.find((item) => item.line.id === hit.id);
+        if (!row) return null;
+        const on = hit.id === activeId;
+        const n = rows.findIndex((item) => item.line.id === hit.id) + 1;
+        const others = hits.filter((other) => other.id !== hit.id);
+        const side = openSide(hit.x, hit.y, others);
+        const label = `${formatInches(row.line.widthIn)} × ${formatInches(row.line.heightIn)}`;
+        return (
+          <button
+            key={hit.id}
+            type="button"
+            aria-hidden="true"
+            tabIndex={-1}
+            onClick={() => onChoose(hit.id)}
+            style={{ left: `${hit.x}%`, top: `${hit.y}%` }}
+            className={`absolute z-30 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-semibold ring-2 ring-white ${
+              on ? "bg-teal-800 text-white" : "bg-stone-800 text-white"
+            }`}
+          >
+            {n}
+            {on ? (
+              <span className={`${chipClass[side]} whitespace-nowrap rounded-md bg-white px-1.5 py-0.5 text-[11px] font-semibold text-stone-900 shadow ring-1 ring-stone-300`}>
+                {label}
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
       {spots.map((spot) => {
-        const item = byId.get(spot.id);
+        const item = guessById.get(spot.id);
         if (!item) return null;
         const on = spot.id === activeId;
         const others = spots.filter((other) => other.id !== spot.id);
