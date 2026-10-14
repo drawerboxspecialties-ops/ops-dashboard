@@ -6,7 +6,7 @@ import { getJobSnapshot, getServerJob, subscribeJob, updateJob } from "@/lib/sla
 import { formatMoney, formatRate, formatSquareFeet, priceQuote } from "@/lib/slab/pricing";
 import { quotePlainText } from "@/lib/slab/quote-text";
 import { blankLine, haleSampleLines } from "@/lib/slab/sample";
-import type { Confidence, PieceKind } from "@/lib/slab/types";
+import type { Confidence, LineItem, PieceKind } from "@/lib/slab/types";
 import {
   BasisButton,
   FinishSelect,
@@ -52,6 +52,27 @@ type ExtractedPiece = {
 type StagedFile = { id: string; file: File; preview: string | null };
 type Notice = { tone: "ok" | "err"; text: string };
 
+function sameName(source: string | null, name: string): boolean {
+  if (!source) return false;
+  const leaf = source.trim().toLowerCase().split(/[/\\]/).pop();
+  return leaf === name.trim().toLowerCase();
+}
+
+function applyLinePatch(line: LineItem, patch: Partial<LineItem>): LineItem {
+  const next = { ...line, ...patch };
+  const sizeChanged =
+    (patch.widthIn !== undefined && patch.widthIn !== line.widthIn) ||
+    (patch.heightIn !== undefined && patch.heightIn !== line.heightIn) ||
+    (patch.quantity !== undefined && patch.quantity !== line.quantity) ||
+    (patch.hingeHolesEach !== undefined && patch.hingeHolesEach !== line.hingeHolesEach);
+  if (!sizeChanged || !next.reading) return next;
+  return {
+    ...next,
+    confidence: null,
+    reading: { ...next.reading, seenAs: "", explanation: "" },
+  };
+}
+
 export function SlabEstimator() {
   const job = useSyncExternalStore(subscribeJob, getJobSnapshot, getServerJob);
   const { customer, jobName, jobNote, basis, finishId, lines } = job;
@@ -60,7 +81,6 @@ export function SlabEstimator() {
   const [reader, setReader] = useState<ReaderStatus | null>(null);
   const [readNote, setReadNote] = useState("");
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [confirmClear, setConfirmClear] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const shownPreviewId = files.some((item) => item.id === previewId) ? previewId : (files.at(-1)?.id ?? null);
 
@@ -122,6 +142,12 @@ export function SlabEstimator() {
     setFiles((current) => {
       const target = current.find((item) => item.id === id);
       if (target?.preview) URL.revokeObjectURL(target.preview);
+      if (target) {
+        updateJob((job) => ({
+          ...job,
+          lines: job.lines.filter((line) => !sameName(line.sourceFile, target.file.name)),
+        }));
+      }
       return current.filter((item) => item.id !== id);
     });
   }
@@ -179,7 +205,13 @@ export function SlabEstimator() {
           ? note
           : `Read ${created.length} ${created.length === 1 ? "piece" : "pieces"}. Check anything marked low before you send the quote.`,
       );
-      setNotice({ tone: "ok", text: `Added ${created.length} ${created.length === 1 ? "piece" : "pieces"}.` });
+      setNotice({
+        tone: "ok",
+        text:
+          mode === "replace"
+            ? `Replaced the quote with ${created.length} ${created.length === 1 ? "piece" : "pieces"}.`
+            : `Added ${created.length} ${created.length === 1 ? "piece" : "pieces"}.`,
+      });
     } catch {
       setNotice({ tone: "err", text: "The reader did not respond. Check the connection and try again." });
     } finally {
@@ -188,6 +220,14 @@ export function SlabEstimator() {
   }
 
   function clearQuote() {
+    setFiles((current) => {
+      for (const item of current) {
+        if (item.preview) URL.revokeObjectURL(item.preview);
+      }
+      return [];
+    });
+    setPreviewId(null);
+    setReadNote("");
     updateJob(() => ({
       customer: "",
       jobName: "",
@@ -196,8 +236,7 @@ export function SlabEstimator() {
       finishId: DEFAULT_FINISH_ID,
       lines: [],
     }));
-    setReadNote("");
-    setConfirmClear(false);
+    setNotice({ tone: "ok", text: "Quote cleared." });
   }
 
   async function copyQuote() {
@@ -277,7 +316,7 @@ export function SlabEstimator() {
               onUpdate={(id, patch) =>
                 updateJob((current) => ({
                   ...current,
-                  lines: current.lines.map((line) => (line.id === id ? { ...line, ...patch } : line)),
+                  lines: current.lines.map((line) => (line.id === id ? applyLinePatch(line, patch) : line)),
                 }))
               }
               onRemove={(id) =>
@@ -304,7 +343,7 @@ export function SlabEstimator() {
             onUpdate={(id, patch) =>
               updateJob((current) => ({
                 ...current,
-                lines: current.lines.map((line) => (line.id === id ? { ...line, ...patch } : line)),
+                lines: current.lines.map((line) => (line.id === id ? applyLinePatch(line, patch) : line)),
               }))
             }
             onAddPiece={(fileName) => {
@@ -426,19 +465,8 @@ export function SlabEstimator() {
             <button type="button" className={outlineButton} onClick={() => window.print()}>
               Print
             </button>
-            <button
-              type="button"
-              className={ghostButton}
-              onClick={() => {
-                if (!confirmClear) {
-                  setConfirmClear(true);
-                  return;
-                }
-                clearQuote();
-              }}
-              onBlur={() => setConfirmClear(false)}
-            >
-              {confirmClear ? "Clear quote?" : "Clear"}
+            <button type="button" className={ghostButton} onClick={clearQuote}>
+              Clear quote
             </button>
           </div>
           <p className="mt-4 text-xs leading-5 text-stone-500">
