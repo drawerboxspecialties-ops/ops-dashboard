@@ -107,6 +107,14 @@ export const VERCEL_APPS: HubApp[] = [
     updated_at: "2026-09-29T00:00:00.000Z",
   },
   {
+    name: "dbs-route-live",
+    title: "DBS Route Live",
+    description: "Live OptimoRoute status, map, signatures, and photos. Separate from Route Printouts.",
+    url: "https://dbs-route-live.vercel.app",
+    host: "Vercel",
+    updated_at: "2026-10-23T00:00:00.000Z",
+  },
+  {
     name: "allmoxy-ops-chat",
     title: "Allmoxy Chatbot",
     description: "Ask about orders, customers, invoices, and payments.",
