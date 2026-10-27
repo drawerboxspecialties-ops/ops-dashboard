@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Trimmer } from "@/components/bottoms/trimmer";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Allmoxy bottoms · DBS Operations Hub",
-  description: "Remove orders from an Allmoxy bottoms CSV and save today's file to the Desktop.",
+  description: "Opens the standalone Allmoxy bottoms app.",
 };
 
 export default function BottomsPage() {
-  return <Trimmer />;
+  redirect("https://allmoxy-bottoms.vercel.app");
 }

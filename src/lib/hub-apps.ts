@@ -36,7 +36,7 @@ export const VERCEL_APPS: HubApp[] = [
     name: "allmoxy-bottoms",
     title: "Allmoxy Bottoms",
     description: "Drop a bottoms batch, remove orders by number, and save today's CSV to the Desktop.",
-    url: "https://dbs-ops-hub.vercel.app/bottoms",
+    url: "https://allmoxy-bottoms.vercel.app",
     host: "Vercel",
     updated_at: "2026-10-26T17:00:00.000Z",
   },
