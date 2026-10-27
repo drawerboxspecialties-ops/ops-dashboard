@@ -33,6 +33,14 @@ export const PAGE_APP_OVERRIDES: Record<string, { title: string; description: st
 
 export const VERCEL_APPS: HubApp[] = [
   {
+    name: "allmoxy-bottoms",
+    title: "Allmoxy Bottoms",
+    description: "Drop a bottoms batch, remove orders by number, and save today's CSV to the Desktop.",
+    url: "https://dbs-ops-hub.vercel.app/bottoms",
+    host: "Vercel",
+    updated_at: "2026-10-26T17:00:00.000Z",
+  },
+  {
     name: "slab-measure",
     title: "Slab Measure",
     description: "Read a door schedule from a photo or PDF, then price slab doors and drawer fronts from the October 2026 list.",

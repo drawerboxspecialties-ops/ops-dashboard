@@ -3,11 +3,14 @@
 Internal tool directory for **Drawer Box Specialties**.
 
 - **Hub:** https://dbs-ops-hub.vercel.app
+- **Allmoxy Bottoms:** https://dbs-ops-hub.vercel.app/bottoms
 - **Slab Measure:** https://dbs-ops-hub.vercel.app/slab
 - **GitHub Pages shortcut:** https://drawerboxspecialties-ops.github.io/ops-dashboard/
 - **Repo:** https://github.com/drawerboxspecialties-ops/ops-dashboard
 
 The github.io link redirects to Vercel. Unlock with the hub password, then Google Authenticator (or the backup code). GitHub Pages cannot keep those secrets, so login lives on Vercel.
+
+Allmoxy Bottoms trims a headerless bottoms batch. Check the orders to remove, then save a CSV named with today's date and `allmoxy bottom`. The file stays in the browser.
 
 Slab Measure prices slab doors and drawer fronts from the October 2026 list. On Vercel, drawing reads use the AI Gateway. Hand entry works without it.
 
