@@ -20,20 +20,6 @@ type GithubRepo = {
   updated_at?: string;
 };
 
-function formatDate(value: string) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function hostClass(host: string) {
-  if (host === "Vercel") return "bg-teal-50 text-teal-800";
-  if (host === "Local") return "bg-amber-50 text-amber-900";
-  return "bg-stone-100 text-stone-600";
-}
-
 export function HubGrid() {
   const [apps, setApps] = useState<HubApp[]>([]);
   const [query, setQuery] = useState("");
@@ -139,7 +125,7 @@ export function HubGrid() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-14">
+    <div className="mx-auto max-w-[1440px] px-5 py-10 md:px-8 md:py-14">
       <header className="mb-8 md:mb-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-xl">
@@ -147,7 +133,7 @@ export function HubGrid() {
             <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-stone-900 md:text-5xl">
               Operations Hub
             </h1>
-            <p className="mt-2 text-sm text-stone-600 md:text-[15px]">Internal tools, grouped by the job. Search if you know the name.</p>
+            <p className="mt-2 text-sm text-stone-600 md:text-[15px]">Groups sit side by side. Scan down a column, or search if you know the name.</p>
           </div>
           <div className="w-full md:w-[22rem]">
             <label className="relative block">
@@ -207,19 +193,21 @@ export function HubGrid() {
         ) : sections.length === 0 ? (
           <Empty title="No matches" message={`Nothing matches “${query.trim()}”.`} />
         ) : (
-          sections.map((section) => (
-            <section key={section.id}>
-              <div className="mb-3">
-                <h2 className="font-display text-lg font-bold tracking-tight text-stone-900">{section.title}</h2>
-                {section.blurb ? <p className="mt-0.5 text-xs text-stone-500">{section.blurb}</p> : null}
-              </div>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
-                {section.apps.map((app) => (
-                  <AppCard key={`${app.host}-${app.name}`} app={app} />
-                ))}
-              </div>
-            </section>
-          ))
+          <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {sections.map((section) => (
+              <section key={section.id} className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white/90">
+                <div className="border-b border-stone-200/80 px-3 py-2.5">
+                  <h2 className="font-display text-base font-bold tracking-tight text-stone-900">{section.title}</h2>
+                  {section.blurb ? <p className="mt-0.5 text-[11px] leading-snug text-stone-500">{section.blurb}</p> : null}
+                </div>
+                <ul>
+                  {section.apps.map((app) => (
+                    <AppRow key={`${app.host}-${app.name}`} app={app} />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
         )}
       </main>
     </div>
@@ -235,45 +223,40 @@ function Empty({ title, message }: { title: string; message: string }) {
   );
 }
 
-function AppCard({ app }: { app: HubApp }) {
+function AppRow({ app }: { app: HubApp }) {
   const extraLinks = app.extraLinks ?? [];
+  const title = app.title || formatAppName(app.name);
   return (
-    <article className="tool-card group flex min-h-[124px] flex-col rounded-2xl p-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${hostClass(app.host)}`}>
-          {app.host}
-        </span>
-        <span className="text-[10px] font-medium tracking-wider text-stone-400 uppercase">{formatDate(app.updated_at)}</span>
-      </div>
-      <h2 className="font-display text-[15px] leading-snug font-bold tracking-tight text-stone-900 transition group-hover:text-teal-800 line-clamp-2">
-        <a href={app.url} target="_blank" rel="noopener noreferrer" className="focus:underline focus:outline-none">
-          {app.title || formatAppName(app.name)}
+    <li className="border-t border-stone-100 first:border-t-0">
+      <div className="group flex items-start justify-between gap-2 px-3 py-2.5 transition hover:bg-teal-50/70">
+        <a href={app.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 focus:outline-none">
+          <span className="block text-[13px] leading-snug font-semibold text-stone-900 group-hover:text-teal-800">{title}</span>
+          <span className="mt-0.5 block text-[11px] leading-snug text-stone-500">{app.description || "Internal production tool."}</span>
         </a>
-      </h2>
-      <p className="mt-1.5 flex-1 text-[12px] leading-snug text-stone-500 line-clamp-2">
-        {app.description || "Internal production tool."}
-      </p>
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
         <a
           href={app.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[12px] font-semibold text-teal-800 transition hover:text-teal-950 focus:underline focus:outline-none"
+          className="shrink-0 pt-0.5 text-[11px] font-semibold text-teal-800 hover:text-teal-950 focus:underline focus:outline-none"
         >
-          {app.cta || "Open"} →
+          {app.cta || "Open"}
         </a>
-        {extraLinks.map((link) => (
-          <a
-            key={link.url}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[12px] font-semibold text-teal-800 transition hover:text-teal-950 focus:underline focus:outline-none"
-          >
-            {link.label} →
-          </a>
-        ))}
       </div>
-    </article>
+      {extraLinks.length ? (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 px-3 pb-2">
+          {extraLinks.map((link) => (
+            <a
+              key={link.url}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-semibold text-teal-800 hover:text-teal-950 focus:underline focus:outline-none"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      ) : null}
+    </li>
   );
 }
