@@ -201,14 +201,20 @@ export function HubGrid() {
         ) : (
           <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {sections.map((section) => (
-              <section key={section.id} className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white/90">
-                <div className="border-b border-stone-200/80 px-3 py-2.5">
-                  <h2 className="font-display text-base font-bold tracking-tight text-stone-900">{section.title}</h2>
-                  {section.blurb ? <p className="mt-0.5 text-[11px] leading-snug text-stone-500">{section.blurb}</p> : null}
+              <section
+                key={section.id}
+                className="overflow-hidden rounded-2xl border"
+                style={{ backgroundColor: section.bg, borderColor: section.header }}
+              >
+                <div className="border-b px-3 py-2.5" style={{ backgroundColor: section.header, borderColor: section.header }}>
+                  <h2 className="font-display text-base font-bold tracking-tight" style={{ color: section.ink }}>
+                    {section.title}
+                  </h2>
+                  {section.blurb ? <p className="mt-0.5 text-[11px] leading-snug text-stone-600">{section.blurb}</p> : null}
                 </div>
                 <ul>
                   {section.apps.map((app) => (
-                    <AppRow key={`${app.host}-${app.name}`} app={app} />
+                    <AppRow key={`${app.host}-${app.name}`} app={app} line={section.header} />
                   ))}
                 </ul>
               </section>
@@ -229,25 +235,20 @@ function Empty({ title, message }: { title: string; message: string }) {
   );
 }
 
-function AppRow({ app }: { app: HubApp }) {
+function AppRow({ app, line }: { app: HubApp; line: string }) {
   const extraLinks = app.extraLinks ?? [];
   const title = app.title || formatAppName(app.name);
   return (
-    <li className="border-t border-stone-100 first:border-t-0">
-      <div className="group flex items-start justify-between gap-2 px-3 py-2.5 transition hover:bg-teal-50/70">
-        <a href={app.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 focus:outline-none">
-          <span className="block text-[13px] leading-snug font-semibold text-stone-900 group-hover:text-teal-800">{title}</span>
-          <span className="mt-0.5 block text-[11px] leading-snug text-stone-500">{app.description || "Internal production tool."}</span>
-        </a>
-        <a
-          href={app.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 pt-0.5 text-[11px] font-semibold text-teal-800 hover:text-teal-950 focus:underline focus:outline-none"
-        >
-          {app.cta || "Open"}
-        </a>
-      </div>
+    <li className="border-t first:border-t-0" style={{ borderColor: line }}>
+      <a
+        href={app.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block px-3 py-2.5 transition hover:bg-white/50 focus:outline-none"
+      >
+        <span className="block text-[13px] leading-snug font-semibold text-stone-900">{title}</span>
+        <span className="mt-0.5 block text-[11px] leading-snug text-stone-600">{app.description || "Internal production tool."}</span>
+      </a>
       {extraLinks.length ? (
         <div className="flex flex-wrap gap-x-3 gap-y-1 px-3 pb-2">
           {extraLinks.map((link) => (
@@ -256,7 +257,7 @@ function AppRow({ app }: { app: HubApp }) {
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] font-semibold text-teal-800 hover:text-teal-950 focus:underline focus:outline-none"
+              className="text-[11px] font-semibold text-stone-700 underline decoration-stone-300 underline-offset-2 hover:text-stone-950 focus:outline-none"
             >
               {link.label}
             </a>

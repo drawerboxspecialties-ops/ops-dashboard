@@ -123,12 +123,12 @@ export function formatAppName(name: string) {
 }
 
 export const HUB_SECTIONS = [
-  { id: "shipping", title: "Shipping", blurb: "Routes, printouts, scan, and UPS" },
-  { id: "reports", title: "Reports", blurb: "Shipping, margin, and manufacturing" },
-  { id: "calculators", title: "Calculators", blurb: "Quotes, specs, and pricing" },
-  { id: "shop", title: "Shop", blurb: "Bottoms, cut sheets, and the shop PC" },
-  { id: "help", title: "Help", blurb: "Safety meetings and training" },
-  { id: "other", title: "Other", blurb: "" },
+  { id: "shipping", title: "Shipping", blurb: "Routes, printouts, scan, and UPS", bg: "#e7eef8", header: "#d5e3f4", ink: "#0b3a6e" },
+  { id: "reports", title: "Reports", blurb: "Shipping, margin, and manufacturing", bg: "#e5f6f4", header: "#d2eeeb", ink: "#0f766e" },
+  { id: "calculators", title: "Calculators", blurb: "Quotes, specs, and pricing", bg: "#f8f1e3", header: "#f0e4cc", ink: "#8a5a12" },
+  { id: "shop", title: "Shop", blurb: "Bottoms, cut sheets, and the shop PC", bg: "#e8f6ea", header: "#d4edd8", ink: "#1f6b3a" },
+  { id: "help", title: "Help", blurb: "Safety meetings and training", bg: "#f4eef8", header: "#e6dcf2", ink: "#5b3d82" },
+  { id: "other", title: "Other", blurb: "", bg: "#f4f4f5", header: "#e7e5e4", ink: "#44403c" },
 ] as const;
 
 export type HubSectionId = (typeof HUB_SECTIONS)[number]["id"];
