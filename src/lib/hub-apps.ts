@@ -12,7 +12,6 @@ export type HubApp = {
   url: string;
   host: string;
   updated_at: string;
-  cta?: string;
   alongsidePages?: boolean;
   extraLinks?: ExtraLink[];
 };
@@ -24,10 +23,21 @@ export const APP_EXTRA_LINKS: Record<string, ExtraLink[]> = {
   ],
 };
 
-export const PAGE_APP_OVERRIDES: Record<string, { title: string; description: string }> = {
+export const PAGE_APP_OVERRIDES: Record<string, { title?: string; description?: string }> = {
   "dbs-safety": {
     title: "DBS Safety",
     description: "Safety meetings, sign-in, and training record. Catch a department when you have time.",
+  },
+  "dbs-u-shape-spec-calculator": {
+    title: "DBS U-Shape Spec Calculator",
+    description: "U-shape drawer box cut specs and printable shop sheets.",
+  },
+  "allmoxy-top-edge-calculator": {
+    description: "Turn an Allmoxy top-edge CSV into parts, boxes, heights, and cut layouts.",
+  },
+  opticutexportappv2: {
+    title: "OptiCut Export",
+    description: "Turn an Allmoxy CSV into a Weinig OptiCut cut list.",
   },
 };
 
@@ -62,7 +72,6 @@ export const VERCEL_APPS: HubApp[] = [
     description: "Local cut-sheet organizer + HP M611 print. Opens the shop PC app only (Always On must be running).",
     url: "http://127.0.0.1:5055",
     host: "Local",
-    cta: "Open local",
     alongsidePages: true,
     updated_at: "2026-08-14T00:00:00.000Z",
   },
@@ -93,7 +102,7 @@ export const VERCEL_APPS: HubApp[] = [
   {
     name: "dbs-reports",
     title: "DBS Reports",
-    description: "Shipping, Margin Desk, and Manufacturing Desk in one hub.",
+    description: "Shipping, margin, manufacturing, commission, transfer, company limits, and trash.",
     url: "https://dbs-shipping-report.vercel.app",
     host: "Vercel",
     updated_at: "2026-07-29T00:00:00.000Z",
