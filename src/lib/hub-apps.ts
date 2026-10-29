@@ -57,14 +57,6 @@ export const VERCEL_APPS: HubApp[] = [
     updated_at: "2026-10-03T02:00:00.000Z",
   },
   {
-    name: "dbs-cv-helpbot",
-    title: "CV Help",
-    description: "Cabinet Vision 2026 assistant. Ask about a screen, command, or setting.",
-    url: "https://dbs-cv-helpbot.vercel.app",
-    host: "Vercel",
-    updated_at: "2026-09-24T00:00:00.000Z",
-  },
-  {
     name: "cutflow",
     title: "CutFlow",
     description: "Local cut-sheet organizer + HP M611 print. Opens the shop PC app only (Always On must be running).",
@@ -122,14 +114,6 @@ export const VERCEL_APPS: HubApp[] = [
     host: "Vercel",
     updated_at: "2026-10-23T00:00:00.000Z",
   },
-  {
-    name: "allmoxy-ops-chat",
-    title: "Allmoxy Chatbot",
-    description: "Ask about orders, customers, invoices, and payments.",
-    url: "https://allmoxy-ops-chat.vercel.app",
-    host: "Vercel",
-    updated_at: "2026-07-24T00:00:00.000Z",
-  },
 ];
 
 export function formatAppName(name: string) {
@@ -143,7 +127,7 @@ export const HUB_SECTIONS = [
   { id: "reports", title: "Reports", blurb: "Shipping, margin, and manufacturing" },
   { id: "calculators", title: "Calculators", blurb: "Quotes, specs, and pricing" },
   { id: "shop", title: "Shop", blurb: "Bottoms, cut sheets, and the shop PC" },
-  { id: "help", title: "Help", blurb: "Cabinet Vision, Allmoxy, and safety" },
+  { id: "help", title: "Help", blurb: "Safety meetings and training" },
   { id: "other", title: "Other", blurb: "" },
 ] as const;
 
@@ -164,8 +148,6 @@ const APP_SECTION: Record<string, HubSectionId> = {
   "allmoxy-bottoms": "shop",
   opticutexportappv2: "shop",
   cutflow: "shop",
-  "dbs-cv-helpbot": "help",
-  "allmoxy-ops-chat": "help",
   "dbs-safety": "help",
 };
 
@@ -186,7 +168,7 @@ const SECTION_ORDER: Record<HubSectionId, string[]> = {
     "dbs-trash-can-cutout-spec",
   ],
   shop: ["allmoxy-bottoms", "opticutexportappv2", "cutflow"],
-  help: ["dbs-cv-helpbot", "allmoxy-ops-chat", "dbs-safety"],
+  help: ["dbs-safety"],
   other: [],
 };
 

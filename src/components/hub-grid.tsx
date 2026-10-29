@@ -42,7 +42,13 @@ export function HubGrid() {
         });
         if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
         const repos = (await response.json()) as GithubRepo[];
-        const hidden = new Set(["ops-dashboard", "dbs-rta-quote-calculator"]);
+        const hidden = new Set([
+          "ops-dashboard",
+          "dbs-rta-quote-calculator",
+          "dbs-cv-helpbot",
+          "allmoxy-ops-chat",
+          "dbs-allmoxy-chatbot",
+        ]);
         pageApps = repos
           .filter((repo) => repo.has_pages && !hidden.has(String(repo.name).toLowerCase()))
           .map((repo) => {
