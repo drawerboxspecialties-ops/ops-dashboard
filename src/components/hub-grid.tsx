@@ -3,10 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   APP_EXTRA_LINKS,
+  HUB_SECTIONS,
   ORG_NAME,
   PAGE_APP_OVERRIDES,
   VERCEL_APPS,
+  compareInSection,
   formatAppName,
+  sectionForApp,
   type HubApp,
 } from "@/lib/hub-apps";
 
@@ -81,9 +84,7 @@ export function HubGrid() {
         return !pageNames.has(key);
       });
 
-      const next = [...vercelApps, ...pageApps].sort(
-        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-      );
+      const next = [...vercelApps, ...pageApps];
       if (next.length === 0 && githubFailed) {
         setFailed(true);
         setApps([]);
@@ -116,9 +117,20 @@ export function HubGrid() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const filtered = query.trim()
-    ? apps.filter((app) => `${app.title} ${app.name} ${app.description}`.toLowerCase().includes(query.trim().toLowerCase()))
-    : apps;
+  const needle = query.trim().toLowerCase();
+  const sections = HUB_SECTIONS.map((section) => {
+    const sectionHit = needle.length > 0 && section.title.toLowerCase().includes(needle);
+    return {
+      ...section,
+      apps: apps
+        .filter((app) => sectionForApp(app) === section.id)
+        .filter((app) => {
+          if (!needle || sectionHit) return true;
+          return `${app.title} ${app.name} ${app.description}`.toLowerCase().includes(needle);
+        })
+        .sort((a, b) => compareInSection(a, b, section.id)),
+    };
+  }).filter((section) => section.apps.length > 0);
 
   function signOut() {
     void fetch("/api/logout", { method: "POST", credentials: "same-origin" }).finally(() => {
@@ -135,7 +147,7 @@ export function HubGrid() {
             <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-stone-900 md:text-5xl">
               Operations Hub
             </h1>
-            <p className="mt-2 text-sm text-stone-600 md:text-[15px]">Internal tools in one place. Open a system below.</p>
+            <p className="mt-2 text-sm text-stone-600 md:text-[15px]">Internal tools, grouped by the job. Search if you know the name.</p>
           </div>
           <div className="w-full md:w-[22rem]">
             <label className="relative block">
@@ -182,20 +194,32 @@ export function HubGrid() {
         </div>
       </header>
 
-      <main className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4" aria-live="polite">
+      <main className="space-y-8" aria-live="polite">
         {failed ? (
-          <div className="col-span-full rounded-2xl border border-rose-200 bg-rose-50/80 px-6 py-14 text-center">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-6 py-14 text-center">
             <p className="text-sm font-semibold text-rose-800">Could not load tools from GitHub.</p>
             <p className="mt-1 text-xs text-rose-600/80">Check the network or rate limit, then refresh.</p>
           </div>
         ) : busy && apps.length === 0 ? (
-          <div className="col-span-full py-16 text-center text-sm text-stone-500">Loading tools…</div>
+          <div className="py-16 text-center text-sm text-stone-500">Loading tools…</div>
         ) : apps.length === 0 ? (
           <Empty title="No tools found" message="Enable GitHub Pages or add a Vercel app in hub-apps." />
-        ) : filtered.length === 0 ? (
+        ) : sections.length === 0 ? (
           <Empty title="No matches" message={`Nothing matches “${query.trim()}”.`} />
         ) : (
-          filtered.map((app) => <AppCard key={`${app.host}-${app.name}`} app={app} />)
+          sections.map((section) => (
+            <section key={section.id}>
+              <div className="mb-3">
+                <h2 className="font-display text-lg font-bold tracking-tight text-stone-900">{section.title}</h2>
+                {section.blurb ? <p className="mt-0.5 text-xs text-stone-500">{section.blurb}</p> : null}
+              </div>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
+                {section.apps.map((app) => (
+                  <AppCard key={`${app.host}-${app.name}`} app={app} />
+                ))}
+              </div>
+            </section>
+          ))
         )}
       </main>
     </div>
@@ -204,7 +228,7 @@ export function HubGrid() {
 
 function Empty({ title, message }: { title: string; message: string }) {
   return (
-    <div className="col-span-full rounded-2xl border border-dashed border-stone-300 bg-white/70 px-6 py-14 text-center">
+    <div className="rounded-2xl border border-dashed border-stone-300 bg-white/70 px-6 py-14 text-center">
       <p className="text-sm font-semibold text-stone-800">{title}</p>
       <p className="mt-1 text-xs text-stone-500">{message}</p>
     </div>

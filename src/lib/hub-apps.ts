@@ -137,3 +137,70 @@ export function formatAppName(name: string) {
     .replace(/[-_]+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
+
+export const HUB_SECTIONS = [
+  { id: "shipping", title: "Shipping", blurb: "Routes, printouts, scan, and UPS" },
+  { id: "reports", title: "Reports", blurb: "Shipping, margin, and manufacturing" },
+  { id: "calculators", title: "Calculators", blurb: "Quotes, specs, and pricing" },
+  { id: "shop", title: "Shop", blurb: "Bottoms, cut sheets, and the shop PC" },
+  { id: "help", title: "Help", blurb: "Cabinet Vision, Allmoxy, and safety" },
+  { id: "other", title: "Other", blurb: "" },
+] as const;
+
+export type HubSectionId = (typeof HUB_SECTIONS)[number]["id"];
+
+const APP_SECTION: Record<string, HubSectionId> = {
+  "dbs-route-live": "shipping",
+  "dbs-route-printouts": "shipping",
+  "route-xl-to-csv": "shipping",
+  "dbs-ship-scan": "shipping",
+  "ups-packaging": "shipping",
+  "dbs-reports": "reports",
+  "slab-measure": "calculators",
+  "allmoxy-top-edge-calculator": "calculators",
+  "dbs-u-shape-spec-calculator": "calculators",
+  "dbs-rta-quote-calculator": "calculators",
+  "dbs-trash-can-cutout-spec": "calculators",
+  "allmoxy-bottoms": "shop",
+  opticutexportappv2: "shop",
+  cutflow: "shop",
+  "dbs-cv-helpbot": "help",
+  "allmoxy-ops-chat": "help",
+  "dbs-safety": "help",
+};
+
+const SECTION_ORDER: Record<HubSectionId, string[]> = {
+  shipping: [
+    "dbs-route-live",
+    "dbs-route-printouts",
+    "route-xl-to-csv",
+    "dbs-ship-scan",
+    "ups-packaging",
+  ],
+  reports: ["dbs-reports"],
+  calculators: [
+    "slab-measure",
+    "allmoxy-top-edge-calculator",
+    "dbs-u-shape-spec-calculator",
+    "dbs-rta-quote-calculator",
+    "dbs-trash-can-cutout-spec",
+  ],
+  shop: ["allmoxy-bottoms", "opticutexportappv2", "cutflow"],
+  help: ["dbs-cv-helpbot", "allmoxy-ops-chat", "dbs-safety"],
+  other: [],
+};
+
+export function sectionForApp(app: HubApp): HubSectionId {
+  return APP_SECTION[app.name.toLowerCase()] ?? "other";
+}
+
+export function compareInSection(a: HubApp, b: HubApp, section: HubSectionId) {
+  const order = SECTION_ORDER[section];
+  const rank = (app: HubApp) => {
+    const index = order.indexOf(app.name.toLowerCase());
+    return index === -1 ? order.length : index;
+  };
+  const byRank = rank(a) - rank(b);
+  if (byRank !== 0) return byRank;
+  return a.title.localeCompare(b.title);
+}
