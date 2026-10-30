@@ -94,11 +94,11 @@ export const VERCEL_APPS: HubApp[] = [
   {
     name: "shipflow",
     title: "ShipFlow",
-    description: "Drop shipper and invoice batches, match by order number, and download one PDF per order. Staple print on the shop PC.",
-    url: "https://shipflow-snowy.vercel.app",
-    host: "Vercel",
-    extraLinks: [{ label: "Local print", url: "http://127.0.0.1:5056" }],
-    updated_at: "2026-10-30T19:00:00.000Z",
+    description: "Local shipper + invoice organizer and HP M611 staple print. Opens the shop PC app (Start ShipFlow.bat must be running).",
+    url: "http://127.0.0.1:5056",
+    host: "Local",
+    extraLinks: [{ label: "Cloud download", url: "https://shipflow-snowy.vercel.app" }],
+    updated_at: "2026-10-30T20:52:00.000Z",
   },
   {
     name: "dbs-ship-scan",
