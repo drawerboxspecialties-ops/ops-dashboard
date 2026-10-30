@@ -48,6 +48,7 @@ export function HubGrid() {
           "dbs-cv-helpbot",
           "allmoxy-ops-chat",
           "dbs-allmoxy-chatbot",
+          "shipflow",
         ]);
         pageApps = repos
           .filter((repo) => repo.has_pages && !hidden.has(String(repo.name).toLowerCase()))
