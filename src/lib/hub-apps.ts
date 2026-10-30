@@ -92,6 +92,15 @@ export const VERCEL_APPS: HubApp[] = [
     updated_at: "2026-08-21T00:00:00.000Z",
   },
   {
+    name: "shipflow",
+    title: "ShipFlow",
+    description: "Drop shipper and invoice batches, match by order number, and download one PDF per order. Staple print on the shop PC.",
+    url: "https://shipflow-snowy.vercel.app",
+    host: "Vercel",
+    extraLinks: [{ label: "Local print", url: "http://127.0.0.1:5056" }],
+    updated_at: "2026-10-30T19:00:00.000Z",
+  },
+  {
     name: "dbs-ship-scan",
     title: "Ship Scan",
     description: "Scan and collect Allmoxy orders, then schedule or post status to Shipped.",
@@ -132,7 +141,7 @@ export function formatAppName(name: string) {
 }
 
 export const HUB_SECTIONS = [
-  { id: "shipping", title: "Shipping", blurb: "Routes, printouts, scan, and UPS", bg: "#e7eef8", header: "#d5e3f4", ink: "#0b3a6e" },
+  { id: "shipping", title: "Shipping", blurb: "Routes, printouts, scan, UPS, and shippers", bg: "#e7eef8", header: "#d5e3f4", ink: "#0b3a6e" },
   { id: "reports", title: "Reports", blurb: "Shipping, margin, and manufacturing", bg: "#e5f6f4", header: "#d2eeeb", ink: "#0f766e" },
   { id: "calculators", title: "Calculators", blurb: "Quotes and pricing", bg: "#f8f1e3", header: "#f0e4cc", ink: "#8a5a12" },
   { id: "shop", title: "Shop", blurb: "Specs, bottoms, cut sheets, and the shop PC", bg: "#e8f6ea", header: "#d4edd8", ink: "#1f6b3a" },
@@ -148,6 +157,7 @@ const APP_SECTION: Record<string, HubSectionId> = {
   "route-xl-to-csv": "shipping",
   "dbs-ship-scan": "shipping",
   "ups-packaging": "shipping",
+  shipflow: "shipping",
   "dbs-reports": "reports",
   "slab-measure": "calculators",
   "dbs-rta-quote-calculator": "calculators",
@@ -167,6 +177,7 @@ const SECTION_ORDER: Record<HubSectionId, string[]> = {
     "route-xl-to-csv",
     "dbs-ship-scan",
     "ups-packaging",
+    "shipflow",
   ],
   reports: ["dbs-reports"],
   calculators: ["slab-measure", "dbs-rta-quote-calculator"],
